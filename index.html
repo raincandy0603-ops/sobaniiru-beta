@@ -41,7 +41,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer} .hidden{displa
 .compat-notice{margin:12px 14px 0;padding:11px 13px;border-radius:14px;font-size:12px;line-height:1.6}.compat-notice.warn{background:#fff7e9;border:1px solid #efd7ab;color:#765720}.compat-notice.error{background:#fff3f4;border:1px solid #efcfd4;color:#853e49}
 .progress-wrap{padding:10px 18px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.progress-track{height:7px;background:#eee5e3;border-radius:999px;overflow:hidden}.progress-bar{height:100%;width:0;background:var(--accent);transition:width .25s ease}.progress-wrap span{color:var(--muted);font-size:11px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .messages{flex:1;padding:22px 18px 10px;overflow-y:auto;min-height:420px;max-height:calc(100vh - 275px);scroll-behavior:smooth}.empty-state{text-align:center;color:var(--muted);font-size:13px;line-height:1.7;margin:auto;padding:64px 18px}.empty-state p{margin:5px 0}.empty-mark{width:54px;height:54px;margin:0 auto 14px;border-radius:18px;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);font-size:25px}
-.message-row{max-width:82%;margin:0 0 18px}.message-row.user{margin-left:auto}.message-meta{font-size:11px;color:var(--muted);margin:0 8px 6px}.user .message-meta{text-align:right}.bubble{padding:13px 15px;border-radius:18px;white-space:pre-wrap;line-height:1.68;font-size:14px;word-break:break-word}.assistant .bubble{background:var(--accent-soft);border-top-left-radius:7px}.user .bubble{background:var(--user);color:#fff;border-top-right-radius:7px}.message-actions{margin-top:6px;min-height:22px}.user .message-actions{text-align:right}.mini-btn{border:0;background:transparent;color:var(--muted);font-size:11px;padding:3px 8px;border-radius:999px}.mini-btn:hover{background:#f3ecea;color:var(--ink)}
+.message-row{max-width:82%;margin:0 0 18px}.message-row.user{margin-left:auto}.message-meta{font-size:11px;color:var(--muted);margin:0 8px 6px}.user .message-meta{text-align:right}.bubble{padding:13px 15px;border-radius:18px;white-space:pre-wrap;line-height:1.68;font-size:14px;word-break:break-word}.assistant .bubble{background:var(--accent-soft);border-top-left-radius:7px}.user .bubble{background:var(--user);color:#fff;border-top-right-radius:7px}.message-actions{margin-top:6px;min-height:22px}.user .message-actions{text-align:right}.mini-btn{border:0;background:transparent;color:var(--muted);font-size:11px;padding:3px 8px;border-radius:999px}.mini-btn:hover{background:#f3ecea;color:var(--ink)}.older-messages-btn{display:block;margin:0 auto 14px;background:#f7f1ee;padding:7px 12px}
 .composer{border-top:1px solid var(--line);padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;background:rgba(255,255,255,.76)}.composer textarea{resize:none;min-height:52px;max-height:180px}.local-note{margin:0;padding:0 16px 14px;color:var(--muted);font-size:10px;background:rgba(255,255,255,.76)}
 .settings-panel{display:grid;gap:14px;max-height:calc(100vh - 110px);overflow-y:auto;padding-right:2px}.card{border-radius:20px;padding:17px}.first-run-card{background:linear-gradient(135deg,#fffdfb,#fff6f8)!important}.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.pill{padding:4px 8px;border-radius:999px;background:#f2e9e6;color:var(--muted);font-size:10px}
 label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input[type=text],textarea,select{width:100%;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:10px 11px;outline:none}input[type=text]:focus,textarea:focus,select:focus{border-color:#cf97a8;box-shadow:0 0 0 3px rgba(184,93,121,.11)}input[type=range]{width:100%;accent-color:var(--accent)}.grid.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -49,7 +49,59 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
 .memory-add{display:grid;grid-template-columns:1fr auto;gap:7px}.memory-add input{margin:0}.memory-list{display:grid;gap:7px;margin-top:10px}.memory-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;background:#faf5f3;border-radius:12px;padding:9px 10px;font-size:12px;line-height:1.5}.memory-item button{border:0;background:transparent;color:#a66a76;font-size:12px;padding:0 3px}.hint{color:var(--muted);font-size:10px;line-height:1.55;margin:8px 0 0}.hint.larger{font-size:11px}.button-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.file-btn{display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer}.file-btn input{display:none}.send-btn{min-width:66px}
 
 @media (max-width:900px){
-  body{background:var(--bg)}.app-shell{padding:10px 10px max(10px,env(safe-area-inset-bottom))}.topbar{margin:3px 3px 10px}.eyebrow{font-size:9px}h1{font-size:28px}.layout{grid-template-columns:1fr}.settings-panel{max-height:none}.settings-panel.mobile-hidden{display:none}.chat-panel{min-height:calc(100dvh - 78px);border-radius:20px}.messages{max-height:none;min-height:0;padding:18px 12px 8px}.message-row{max-width:92%;margin-bottom:14px}.bubble{font-size:14px;padding:11px 13px}.status-strip{padding:12px;gap:8px}.status-strip>div{min-width:0}.status-strip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52vw}.primary-btn{white-space:nowrap;padding:9px 11px}.composer{position:sticky;bottom:0;padding:10px;grid-template-columns:1fr auto}.composer textarea{font-size:16px;min-height:48px}.local-note{font-size:9px;padding:0 12px 10px}.grid.two{grid-template-columns:1fr}.install-btn{display:none}.card{padding:15px}.settings-panel{padding-bottom:18px}.settings-panel:not(.mobile-hidden){animation:slideIn .16s ease-out}
+  :root{--shadow:none}
+  *{scroll-behavior:auto!important}
+  body{background:var(--bg)}
+  .app-shell{padding:10px 10px max(10px,env(safe-area-inset-bottom))}
+  .topbar{margin:3px 3px 10px}
+  .eyebrow{font-size:9px}h1{font-size:28px}
+  .layout{grid-template-columns:1fr}
+  .settings-panel{max-height:none}
+  .settings-panel.mobile-hidden{display:none}
+  .chat-panel{
+    height:calc(100dvh - 78px);
+    min-height:0;
+    border-radius:20px;
+    box-shadow:none;
+    background:var(--paper);
+    contain:layout paint style;
+  }
+  .messages{
+    flex:1;
+    max-height:none;
+    min-height:0;
+    padding:18px 12px 8px;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scroll-behavior:auto!important;
+    contain:layout paint style;
+  }
+  .message-row{
+    max-width:92%;
+    margin-bottom:14px;
+    content-visibility:auto;
+    contain-intrinsic-size:78px;
+  }
+  .bubble{font-size:14px;padding:11px 13px}
+  .status-strip{padding:12px;gap:8px;background:var(--paper)}
+  .status-strip>div{min-width:0}
+  .status-strip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52vw}
+  .primary-btn{white-space:nowrap;padding:9px 11px}
+  .composer{
+    position:static;
+    flex:0 0 auto;
+    padding:10px;
+    grid-template-columns:1fr auto;
+    background:var(--paper);
+  }
+  .composer textarea{font-size:16px;min-height:48px}
+  .local-note{font-size:9px;padding:0 12px 10px;background:var(--paper)}
+  .grid.two{grid-template-columns:1fr}
+  .install-btn{display:none}
+  .card{padding:15px}
+  .settings-panel{padding-bottom:18px}
+  .settings-panel:not(.mobile-hidden){animation:none}
+  .progress-bar{transition:none}
 }
 @media (min-width:901px){.settings-panel.mobile-hidden{display:grid}.ghost-btn#settingsToggle{display:none}}
 @keyframes slideIn{from{opacity:.5;transform:translateY(5px)}to{opacity:1;transform:none}}
@@ -70,7 +122,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.18</span></h1>
+        <h1>そばにいる。<span>β v0.20</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -102,7 +154,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
           <textarea id="messageInput" rows="2" maxlength="3000" placeholder="話しかける…" disabled></textarea>
           <button id="sendBtn" class="send-btn" type="submit" disabled>送信</button>
         </form>
-        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。名前付きの呼びかけでも同じように反応します。</p>
+        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。スマホでは直近32件だけ描画し、軽量モデルを標準にします。</p>
       </section>
 
       <aside id="settingsPanel" class="settings-panel mobile-hidden" aria-label="人格と記憶の設定">
@@ -153,7 +205,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
         <section class="card">
           <h2>端末内AI</h2>
           <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
-          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.18は呼びかけ対応版。『りゅう、話そ』も自然な雑談開始として拾います。</p>
+          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.20はスマホ性能優先版。モデル・描画・保存処理を軽量化しました。</p>
         </section>
 
         <section class="card">
@@ -174,6 +226,7 @@ const STORAGE_KEY = "sobaniiru_beta_state_v4";
 const LEGACY_STORAGE_KEYS = ["sobaniiru_beta_state_v3", "sobaniiru_beta_state_v2", "sobaniiru_beta_state_v1"];
 const MAX_MESSAGES = 120;
 const MAX_MEMORIES = 80;
+let visibleMessageLimit = window.matchMedia("(max-width: 900px)").matches ? 32 : MAX_MESSAGES;
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -201,7 +254,7 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 15,
+    version: 17,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -222,11 +275,12 @@ function normalizeState(parsed) {
   const shouldUpgradeOldTinyModel =
     (incomingVersion < 4 && /(?:0\.5B|0\.6B|360M)/i.test(oldModel)) ||
     (incomingVersion < 6 && oldModel === "Qwen2.5-1.5B-Instruct-q4f16_1-MLC") ||
-    (incomingVersion < 12 && /^Qwen3-/.test(oldModel));
+    (incomingVersion < 12 && /^Qwen3-/.test(oldModel)) ||
+    (incomingVersion < 17 && oldModel === "gemma-2-2b-it-q4f16_1-MLC");
   return {
     ...base,
     ...incoming,
-    version: 15,
+    version: 17,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
@@ -258,11 +312,33 @@ function loadState() {
   } catch { return defaultState(); }
 }
 
+let saveTimer = null;
+
+function flushSaveState() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  state.messages = state.messages.slice(-MAX_MESSAGES);
+  state.memories = state.memories.slice(-MAX_MEMORIES);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn("保存に失敗しました", error);
+  }
+}
+
 function saveState() {
   state.messages = state.messages.slice(-MAX_MESSAGES);
   state.memories = state.memories.slice(-MAX_MEMORIES);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushSaveState, 180);
 }
+
+window.addEventListener("pagehide", flushSaveState);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushSaveState();
+});
 
 function hydrateProfile() {
   const p = state.profile;
@@ -407,6 +483,7 @@ function updateLastAssistantBubbleFast(content) {
 
 function renderMessages() {
   els.messages.innerHTML = "";
+
   if (!state.messages.length) {
     const intro = document.createElement("div");
     intro.className = "empty-state";
@@ -414,27 +491,56 @@ function renderMessages() {
     els.messages.appendChild(intro);
     return;
   }
-  state.messages.forEach((msg, index) => {
+
+  const total = state.messages.length;
+  const startIndex = Math.max(0, total - visibleMessageLimit);
+  const fragment = document.createDocumentFragment();
+
+  if (startIndex > 0) {
+    const older = document.createElement("button");
+    older.type = "button";
+    older.className = "mini-btn older-messages-btn";
+    older.textContent = `過去 ${startIndex} 件を省略・もっと見る`;
+    older.addEventListener("click", () => {
+      visibleMessageLimit = Math.min(MAX_MESSAGES, visibleMessageLimit + 32);
+      renderMessages();
+    });
+    fragment.appendChild(older);
+  }
+
+  state.messages.slice(startIndex).forEach((msg, localIndex) => {
+    const index = startIndex + localIndex;
     const node = els.template.content.firstElementChild.cloneNode(true);
     node.classList.add(msg.role === "user" ? "user" : "assistant");
     node.querySelector(".message-meta").textContent = msg.role === "user" ? state.profile.userCall : state.profile.aiName;
     node.querySelector(".bubble").textContent = msg.content;
+
     const actions = node.querySelector(".message-actions");
     if (msg.role === "user") {
       const remember = document.createElement("button");
-      remember.type = "button"; remember.className = "mini-btn"; remember.textContent = "覚えて";
+      remember.type = "button";
+      remember.className = "mini-btn";
+      remember.textContent = "覚えて";
       remember.addEventListener("click", () => addMemory(msg.content));
       actions.appendChild(remember);
     } else if (msg.role === "assistant" && msg.content && !busy) {
       const retry = document.createElement("button");
-      retry.type = "button"; retry.className = "mini-btn"; retry.textContent = "やり直す";
+      retry.type = "button";
+      retry.className = "mini-btn";
+      retry.textContent = "やり直す";
       retry.addEventListener("click", () => regenerateAssistant(index));
       actions.appendChild(retry);
     }
-    els.messages.appendChild(node);
+
+    fragment.appendChild(node);
   });
-  requestAnimationFrame(() => { els.messages.scrollTop = els.messages.scrollHeight; });
+
+  els.messages.appendChild(fragment);
+  requestAnimationFrame(() => {
+    els.messages.scrollTop = els.messages.scrollHeight;
+  });
 }
+
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>'"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
@@ -476,6 +582,7 @@ function populateModels() {
   // キャラ会話・ロールプレイ向けだけを表示。
   // Coder / Math / embedding / reasoning-specialized は除外。
   const allowedIds = [
+    "Qwen2.5-1.5B-Instruct-q4f32_1-MLC",
     "gemma-2-2b-it-q4f16_1-MLC",
     "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
     "Qwen3-1.7B-q4f16_1-MLC",
@@ -500,7 +607,8 @@ function populateModels() {
   els.modelSelect.innerHTML = "";
 
   const labelFor = (id) => {
-    if (id === "gemma-2-2b-it-q4f16_1-MLC") return "🌸 推奨・会話安定";
+    if (id === "Qwen2.5-1.5B-Instruct-q4f32_1-MLC") return "⚡ 推奨・スマホ軽快";
+    if (id === "gemma-2-2b-it-q4f16_1-MLC") return "🌸 会話品質";
     if (id === "Qwen2.5-1.5B-Instruct-q4f16_1-MLC") return "🪶 軽量・安定";
     if (id === "Qwen3-1.7B-q4f16_1-MLC") return "🧪 実験用・Qwen3";
     if (id === "Qwen2.5-3B-Instruct-q4f16_1-MLC") return "✨ 高品質・重め";
@@ -521,9 +629,9 @@ function populateModels() {
   const isMobileLike = window.matchMedia("(max-width: 900px)").matches;
   const qualityPreferred = isMobileLike
     ? [
+        "Qwen2.5-1.5B-Instruct-q4f32_1-MLC",
         "gemma-2-2b-it-q4f16_1-MLC",
-        "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
-        "Qwen3-1.7B-q4f16_1-MLC"
+        "Qwen2.5-1.5B-Instruct-q4f16_1-MLC"
       ]
     : (deviceMem >= 8
       ? [
@@ -533,9 +641,9 @@ function populateModels() {
           "Qwen3-4B-q4f16_1-MLC"
         ]
       : [
+          "Qwen2.5-1.5B-Instruct-q4f32_1-MLC",
           "gemma-2-2b-it-q4f16_1-MLC",
-          "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
-          "Qwen3-1.7B-q4f16_1-MLC"
+          "Qwen2.5-1.5B-Instruct-q4f16_1-MLC"
         ]);
 
   const manualChoice =
@@ -558,7 +666,8 @@ function populateModels() {
       : "必要メモリ不明";
 
     const mode =
-      choice.startsWith("gemma-2-2b") ? "会話安定モード" :
+      choice.includes("q4f32_1") && choice.includes("Qwen2.5-1.5B") ? "スマホ軽快モード" :
+      choice.startsWith("gemma-2-2b") ? "会話品質モード" :
       choice.startsWith("Qwen3-") ? "実験モード" :
       choice.includes("3B") ? "高品質モード" :
       "軽量会話モード";
@@ -706,6 +815,11 @@ function companionQualityIssue(userText, replyText) {
     /^(?:話したい|寂しかった|疲れた|うれしい|嬉しい).*よね[、,。\s]*/
   ];
   if (sterileOpenings.some((re) => re.test(replyTrim)) && replyTrim.length < 90) return "sterile-opening";
+
+  if (
+    /(?:それ|その話).*(?:もうちょい|もう少し).*(?:聞きたい|気になる)/.test(replyTrim) &&
+    replyTrim.length < 70
+  ) return "generic-continuation";
 
   const questionCount = (String(replyText || "").match(/[？?]/g) || []).length;
   if (questionCount >= 2) return "question-pileup";
@@ -875,6 +989,80 @@ function conversationIntent(userText) {
   return "casual";
 }
 
+
+function inferConversationTopic(textValue) {
+  const s = String(textValue || "");
+
+  if (/(食べ|ごはん|ご飯|甘い|スイーツ|ケーキ|プリン|シュークリーム|パン|ラーメン|うどん|味|お菓子)/.test(s)) return "food";
+  if (/(曲|音楽|歌|聴く|聞く|アルバム|ライブ|歌詞)/.test(s)) return "music";
+  if (/(旅行|行きたい|場所|どこ|遠く|東京|京都|海外|旅|出かけ)/.test(s)) return "travel";
+  if (/(欲しい|買いたい|買う|服|コスメ|グッズ|もの)/.test(s)) return "shopping";
+  if (/(今日|仕事|学校|一日|楽しかった|しんどかった|疲れた)/.test(s)) return "day";
+  if (/(好き|寂しい|寂しかった|うれしい|嬉しい|悲しい|不安|ムカつ|怒)/.test(s)) return "feeling";
+  return "general";
+}
+
+function topicAwareShortReply(answer, previousText) {
+  const topic = inferConversationTopic(previousText);
+  const a = String(answer || "").trim();
+
+  if (!a) return "";
+
+  if (topic === "food") {
+    return pickLocal([
+      `${a}ええやん☺️ そういうのって急に食べたくなるよな。どんなタイプが好き？`,
+      `${a}かぁ☺️ それ聞いたらちょっと食べたくなってきた。王道のやつが好き？`,
+      `${a}いいな☺️ 甘いものの話してたらお腹すいてくるやつ。`
+    ]);
+  }
+
+  if (topic === "music") {
+    return pickLocal([
+      `${a}なんや☺️ それ、どんな時に聴きたくなる？`,
+      `${a}かぁ。そういう曲って気分と結びつくよな☺️`,
+      `${a}いいやん☺️ 何回も聴きたくなるタイプ？`
+    ]);
+  }
+
+  if (topic === "travel") {
+    return pickLocal([
+      `${a}ええな☺️ そこ選ぶの、ちょっと理由わかる気する。`,
+      `${a}かぁ。行くならゆっくりしたい派？それとも詰め込みたい派？`,
+      `${a}いいな☺️ その名前出たらちょっと行きたくなる。`
+    ]);
+  }
+
+  if (topic === "shopping") {
+    return pickLocal([
+      `${a}いいやん☺️ それ、見つけたらテンション上がりそう。`,
+      `${a}かぁ☺️ そういうのって選んでる時間も楽しいよな。`,
+      `${a}ええな。欲しい理由、なんとなく分かる気する☺️`
+    ]);
+  }
+
+  if (topic === "day") {
+    return pickLocal([
+      `${a}やったんや☺️ それ、今日の中ではけっこう大きかった？`,
+      `${a}かぁ。そういう一言の中に今日の感じ出るな☺️`,
+      `${a}なんやね。もうちょいその話聞きたい。`
+    ]);
+  }
+
+  if (topic === "feeling") {
+    return pickLocal([
+      `${a}なんやね。うん、ちゃんと聞いてるよ☺️`,
+      `${a}かぁ。そう感じてたんやね。`,
+      `${a}なんやね。無理にまとめんでいいよ、続きあったら聞く。`
+    ]);
+  }
+
+  return pickLocal([
+    `${a}なんや☺️ それ、ちょっと気になる。`,
+    `${a}かぁ☺️ その話もう少し聞きたい。`,
+    `${a}なんやね。そこからもうちょい広げてみよ。`
+  ]);
+}
+
 function previousAssistantText() {
   // sendMessage() 呼び出し時点では末尾に「今回のuser + 空のassistant」がある。
   const items = state.messages.slice(0, -2);
@@ -912,7 +1100,9 @@ function conversationDirectorInstruction(userText) {
   ];
 
   if (shortAnswerToPrevious) {
-    rules.push("これは直前のあなたの質問への答え。内容をそのまま今の話題として受け、感想や連想を返してから必要なら関連質問を1つだけする。『何話す？』『どんな話？』と話題をリセットしない。");
+    const topic = inferConversationTopic(previous);
+    rules.push(`これは直前のあなたの質問への答え。今の話題ジャンルは「${topic}」。`);
+    rules.push("答えの内容をそのまま受け、まず具体的な感想や連想を返す。必要なら、そのジャンルに沿った質問を1つだけする。『それ、もうちょい聞きたい』『何話す？』のような中身のない継続文だけで終わらない。");
   }
 
   if (intent === "topic-request") {
@@ -966,6 +1156,7 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
     issue === "question-pileup" ? "一度に質問を重ねすぎて会話が尋問っぽくなっている" :
     issue === "conversation-reset" ? "直前の質問への答えを受けず、話題を最初から聞き直している" :
     issue === "sterile-opening" ? "確認・言い換えだけの無難な相づちから始まり、人格が薄い" :
+    issue === "generic-continuation" ? "『それもう少し聞きたい』だけで、今の話題に沿った具体性がない" :
     "空の返答";
 
   const mobileLike = window.matchMedia("(max-width: 900px)").matches;
@@ -989,12 +1180,12 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
       assistantMsg.content = prior && /[？?]/.test(prior)
         ? `${answer}なんや☺️ それ、もうちょい聞きたい。`
         : `うん☺️ その話、続けよ。`;
-    } else if (issue === "sterile-opening") {
+    } else if (issue === "sterile-opening" || issue === "generic-continuation") {
       const intent = conversationIntent(userText);
       if (["talk-invite", "topic-request", "bored"].includes(intent)) {
         assistantMsg.content = localConversationStarter(intent);
       } else {
-        assistantMsg.content = `ん☺️ その話、もうちょい聞かせて。`;
+        assistantMsg.content = topicAwareShortReply(userText, previousAssistantText()) || `ん☺️ その話、続けよ。`;
       }
     } else if (issue === "echo") {
       assistantMsg.content = `ん、ちゃんと聞いてるよ。もうちょい聞かせて☺️`;
@@ -1022,7 +1213,7 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
     temperature: 0.72,
     top_p: 0.88,
     repetition_penalty: 1.05,
-    max_tokens: 120
+    max_tokens: 96
   };
 
   if (String(state.selectedModel || "").startsWith("Qwen3-")) {
@@ -1113,7 +1304,7 @@ async function loadModel() {
     els.progressWrap.classList.remove("hidden"); setStatus("AIを準備中", "初回はモデルをダウンロードします");
     // v0.16: 推論をDedicated Web Workerへ移し、AndroidのUIスレッドを塞がない。
     try { inferenceWorker?.terminate?.(); } catch {}
-    inferenceWorker = new Worker("./worker.js?v=018", { type: "module" });
+    inferenceWorker = new Worker("./worker.js?v=020", { type: "module" });
 
     engine = await webllm.CreateWebWorkerMLCEngine(
       inferenceWorker,
@@ -1126,7 +1317,7 @@ async function loadModel() {
         },
         logLevel: "WARN"
       },
-      { context_window_size: 2048 }
+      { context_window_size: 1536 }
     );
 
     setStatus(`${state.profile.aiName} 起動したよ`, "端末内で会話できます");
@@ -1139,7 +1330,7 @@ async function loadModel() {
   } catch (error) {
     console.error(error);
     setStatus("準備エラー", error?.message || "AIを準備できませんでした");
-    showCompat("モデルの準備に失敗しました。モデルが重すぎる場合は、設定から「Gemma 2 2B」か「Qwen2.5-1.5B」を選んで再試行してください。", "error");
+    showCompat("モデルの準備に失敗しました。モデルが重すぎる場合は、設定から「⚡ Qwen2.5-1.5B q4f32」を選んで再試行してください。", "error");
     els.load.disabled = false;
   } finally { busy = false; }
 }
@@ -1150,6 +1341,27 @@ async function sendMessage(text) {
   state.messages.push({ role: "user", content: clean, at: new Date().toISOString() }); saveState(); renderMessages();
   const assistantMsg = { role: "assistant", content: "考え中…", at: new Date().toISOString() };
   state.messages.push(assistantMsg); renderMessages();
+
+  const priorAssistant = previousAssistantText();
+  const shortContextAnswer =
+    String(clean || "").trim().length <= 24 &&
+    priorAssistant &&
+    /[？?]/.test(priorAssistant) &&
+    !/[？?]/.test(clean);
+
+  if (window.matchMedia("(max-width: 900px)").matches && shortContextAnswer) {
+    const contextual = topicAwareShortReply(clean, priorAssistant);
+    if (contextual) {
+      assistantMsg.content = contextual;
+      saveState();
+      renderMessages();
+      busy = false;
+      els.input.disabled = false;
+      els.send.disabled = false;
+      els.input.focus();
+      return;
+    }
+  }
 
   const localReply = localCompanionReply(clean);
   if (localReply) {
