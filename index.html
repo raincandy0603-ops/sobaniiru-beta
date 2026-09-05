@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.12</span></h1>
+        <h1>そばにいる。<span>β v0.13</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -99,7 +99,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
           <textarea id="messageInput" rows="2" maxlength="3000" placeholder="話しかける…" disabled></textarea>
           <button id="sendBtn" class="send-btn" type="submit" disabled>送信</button>
         </form>
-        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス、重い生成は15秒で救済します。</p>
+        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。Qwen3の思考タグは自動で除去します。</p>
       </section>
 
       <aside id="settingsPanel" class="settings-panel mobile-hidden" aria-label="人格と記憶の設定">
@@ -150,7 +150,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
         <section class="card">
           <h2>端末内AI</h2>
           <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
-          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.12はスマホ安定化版。雑談開始は即レス、生成は15秒で救済します。</p>
+          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.13はQwen3表示修正版。思考タグは画面に出しません。</p>
         </section>
 
         <section class="card">
@@ -196,7 +196,7 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 9,
+    version: 10,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -220,16 +220,21 @@ function normalizeState(parsed) {
   return {
     ...base,
     ...incoming,
-    version: 9,
+    version: 10,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
     memories: Array.isArray(incoming.memories) ? incoming.memories : [],
     messages: Array.isArray(incoming.messages)
-      ? incoming.messages.filter((m) => {
-          const c = String(m?.content || "").trim();
-          return m?.role === "user" || (m?.role === "assistant" && c && c !== "…");
-        })
+      ? incoming.messages
+          .map((m) => {
+            if (m?.role !== "assistant") return m;
+            return { ...m, content: cleanStoredAssistantText(m?.content) };
+          })
+          .filter((m) => {
+            const c = String(m?.content || "").trim();
+            return m?.role === "user" || (m?.role === "assistant" && c);
+          })
       : []
   };
 }
@@ -351,6 +356,29 @@ function checkEnvironment() {
   els.load.disabled = false;
   setStatus("AI未準備", "最初に「AIを準備する」を押してね");
   return true;
+}
+
+
+function stripThinkingBlocks(value) {
+  let s = String(value || "");
+
+  // 完全な <think>...</think> を除去
+  s = s.replace(/<think>[\s\S]*?<\/think>\s*/gi, "");
+
+  // 先頭に未完の <think> が残っている間はユーザーに見せない
+  const open = s.search(/<think>/i);
+  const close = s.search(/<\/think>/i);
+  if (open === 0 && close === -1) return "";
+
+  // タグだけ残った場合も除去
+  s = s.replace(/<\/?think>/gi, "");
+
+  return s.replace(/^\s+/, "");
+}
+
+function cleanStoredAssistantText(value) {
+  const cleaned = stripThinkingBlocks(value).trim();
+  return cleaned === "…" ? "" : cleaned;
 }
 
 function updateLastAssistantBubbleFast(content) {
@@ -924,11 +952,18 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
   // Qwen3はロールプレイ中の思考ブロックを出さず、会話だけ返す。
   if (String(state.selectedModel || "").startsWith("Qwen3-")) {
     request.extra_body = { enable_thinking: false };
+
+    // WebLLM/Qwen3の構成によっては空の<think>ブロックが出ることがあるため、
+    // soft switchも併用する。画面側でも必ず除去する。
+    const last = request.messages[request.messages.length - 1];
+    if (last?.role === "user" && typeof last.content === "string" && !last.content.includes("/no_think")) {
+      last.content += " /no_think";
+    }
   }
 
   const stream = await engine.chat.completions.create(request);
   let gotToken = false;
-  let pending = "";
+  let rawBuffer = "";
   let lastPaint = performance.now();
   let timedOut = false;
 
@@ -942,18 +977,15 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
       const delta = chunk.choices?.[0]?.delta?.content || "";
       if (!delta) continue;
 
-      if (!gotToken) {
-        if (assistantMsg.content === "…") assistantMsg.content = "";
-        gotToken = true;
-      }
+      gotToken = true;
+      rawBuffer += delta;
 
-      pending += delta;
+      // Qwen3の思考タグは表示しない。本文だけ抽出して描画。
+      const visible = stripThinkingBlocks(rawBuffer);
       const now = performance.now();
 
-      // 約150msごとにまとめて描画してスマホ負荷を下げる。
-      if (now - lastPaint >= 150) {
-        assistantMsg.content += pending;
-        pending = "";
+      if (visible && now - lastPaint >= 150) {
+        assistantMsg.content = visible;
         lastPaint = now;
         if (!updateLastAssistantBubbleFast(assistantMsg.content)) renderMessages();
       }
@@ -962,9 +994,11 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
     clearTimeout(timeoutId);
   }
 
-  if (pending) assistantMsg.content += pending;
+  const finalVisible = stripThinkingBlocks(rawBuffer);
 
-  if ((!gotToken || timedOut) && !assistantMsg.content.trim().replace("…", "")) {
+  if (finalVisible) {
+    assistantMsg.content = finalVisible;
+  } else if ((!gotToken || timedOut) && !assistantMsg.content.trim().replace("…", "")) {
     assistantMsg.content = `ちょっと考え込みすぎた🤣 もう一回、短めに話しかけてみて。`;
   } else if (assistantMsg.content === "…") {
     assistantMsg.content = "";
@@ -999,7 +1033,8 @@ async function regenerateAssistant(index) {
   try {
     const history = state.messages
       .slice(0, index)
-      .filter((m) => String(m.content || "").trim() && String(m.content || "").trim() !== "…")
+      .map((m) => m.role === "assistant" ? { ...m, content: cleanStoredAssistantText(m.content) } : m)
+      .filter((m) => String(m.content || "").trim())
       .slice(-8)
       .map((m) => ({ role: m.role, content: m.content }));
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content || "";
@@ -1066,7 +1101,8 @@ async function sendMessage(text) {
   try {
     const history = state.messages
       .slice(0, -1)
-      .filter((m) => String(m.content || "").trim() && String(m.content || "").trim() !== "…")
+      .map((m) => m.role === "assistant" ? { ...m, content: cleanStoredAssistantText(m.content) } : m)
+      .filter((m) => String(m.content || "").trim())
       .slice(-8)
       .map((m) => ({ role: m.role, content: m.content }));
     await streamAssistantInto(assistantMsg, history, conversationDirectorInstruction(clean));
