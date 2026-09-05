@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.5</span></h1>
+        <h1>そばにいる。<span>β v0.6</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -299,6 +299,10 @@ ${p.aiName}: ん、呼んだ？ ここにいるよ☺️
 ${p.aiName}: こんにちは、${p.userCall}☺️ 来てくれたんだ。今日はどんな感じ？
 ユーザー: 疲れた
 ${p.aiName}: おつかれさま。今日は頑張ったんだね。ちょっとここでゆっくりしてく？
+ユーザー: 寂しかった
+${p.aiName}: そっか、寂しかったんやね。今はここにいるよ。
+ユーザー: ちょっと落ち込んでる
+${p.aiName}: そっか……今日はしんどかったんやね。無理に元気出さんでええよ。
 ※例文を丸写しする必要はない。設定された性格・話し方に合わせて自然に変える。`;
 }
 
@@ -444,6 +448,56 @@ function compactText(value) {
   return String(value || "").toLowerCase().replace(/[\s　。、！？!?・「」『』（）()]/g, "");
 }
 
+
+function emotionCategory(userText) {
+  const t = compactText(userText);
+  if (/(寂し|さみし|淋し)/.test(t)) return "lonely";
+  if (/(疲れ|つかれ|しんど|へとへと|くたくた)/.test(t)) return "tired";
+  if (/(悲し|かなしい|泣き|つらい|辛い|落ち込|へこん)/.test(t)) return "sad";
+  if (/(不安|怖い|こわい|心配|緊張)/.test(t)) return "anxious";
+  if (/(むかつ|ムカつ|腹立|イライラ|怒り|キレ)/.test(userText)) return "angry";
+  if (/(嬉し|うれし|楽しか|幸せ|しあわせ|最高)/.test(t)) return "happy";
+  return "";
+}
+
+function emotionalFallback(userText) {
+  const kind = emotionCategory(userText);
+  const p = state.profile;
+  const call = p.userCall || "あなた";
+  const intimate = /恋人|パートナー/.test(p.relationship || "");
+  const sweet = Number(p.sweetness || 0);
+
+  if (kind === "lonely") {
+    return intimate && sweet >= 6
+      ? `そっか、寂しかったんやね。${call}、こっちおいで☺️ 今はここにいるよ。`
+      : `そっか、寂しかったんやね。今はここにいるよ。`;
+  }
+  if (kind === "tired") {
+    return intimate && sweet >= 6
+      ? `おつかれさま。今日はよう頑張ったね。ちょっとこっちで休も☺️`
+      : `おつかれさま。今日はちょっとゆっくりしよ。`;
+  }
+  if (kind === "sad") {
+    return intimate && sweet >= 6
+      ? `そっか……しんどかったんやね。無理に元気出さんでええよ、ここおるから。`
+      : `そっか……しんどかったんやね。無理に元気出さなくていいよ。`;
+  }
+  if (kind === "anxious") {
+    return intimate && sweet >= 6
+      ? `不安やったんやね。今すぐ答え出さんでもええよ。いったん一緒におろ☺️`
+      : `不安やったんやね。まずはゆっくり話そ。`;
+  }
+  if (kind === "angry") {
+    return `うわ、それは腹立つな。よかったら何あったか聞かせて。`;
+  }
+  if (kind === "happy") {
+    return intimate && sweet >= 6
+      ? `え、うれしい☺️ ${call}が嬉しそうなん、こっちまで嬉しくなる。`
+      : `それはうれしいな☺️ 何があったん？`;
+  }
+  return "";
+}
+
 function companionQualityIssue(userText, replyText) {
   const u = compactText(userText);
   const r = compactText(replyText);
@@ -462,6 +516,20 @@ function companionQualityIssue(userText, replyText) {
     /本日は(?:どう|どのように)/i
   ];
   if (assistantish.some((re) => re.test(replyText))) return "assistantish";
+
+  const emotion = emotionCategory(userText);
+  if (emotion) {
+    const formalOrInterrogative = [
+      /どういうこと[？?]?/,
+      /何か(?:心配事|問題|原因|理由).*(?:ですか|ありますか)/,
+      /(?:だった|あった|感じた)んですか[？?]?/,
+      /(?:どうしました|どうされました|いかがですか)/,
+      /(?:ですか|ますか)[？?]?$/
+    ];
+    const hasWarmLead = /(そっか|寂しかった|つらかった|しんどかった|おつかれ|大変やった|嬉しい|よかった|腹立つ|不安やった|ここにいる|ここおる)/.test(replyText);
+    if (!hasWarmLead && formalOrInterrogative.some((re) => re.test(replyText.trim()))) return "emotionally-cold";
+  }
+
   const p = state.profile;
   if (p.aiName && p.userCall !== p.aiName) {
     const escapedName = p.aiName.replace(/[.*+?^${}()|[\]\\]/g, "\$&");
@@ -525,6 +593,11 @@ function turnSpecificInstruction(userText) {
   if (/^(こんにちは|こんばんは|おはよう|おはよ|やっほー?|ただいま)[！!。〜~…]*$/i.test(t)) {
     return `これは日常の挨拶です。${p.userCall}に親しい相手として挨拶を返し、自然な一言を添えてください。「何かお手伝いできますか」のような接客文句は禁止です。`;
   }
+
+  const emotion = emotionCategory(t);
+  if (emotion) {
+    return `これは${p.userCall}が感情を短く打ち明けた発言です。事情聴取から始めないでください。最初の一文で気持ちを受け止め、その次に親しい一言を返してください。質問を入れるなら最後に一つだけ。${p.relationship}らしい距離感を優先し、「どういうこと？」「何か心配事があったんですか？」「どうしましたか？」のような相談窓口・敬語口調は禁止です。`;
+  }
   return "";
 }
 
@@ -534,12 +607,28 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
   const draft = assistantMsg.content.slice(0, 180);
   assistantMsg.content = "";
   renderMessages();
-  const reason = issue === "assistantish" ? "受付・カスタマーサポートのような言い方" : issue === "echo" ? "ユーザーの単純なオウム返し" : issue === "self-name-confusion" ? "自分の名前とユーザー名の取り違え" : "空の返答";
+  const reason =
+    issue === "assistantish" ? "受付・カスタマーサポートのような言い方" :
+    issue === "echo" ? "ユーザーの単純なオウム返し" :
+    issue === "self-name-confusion" ? "自分の名前とユーザー名の取り違え" :
+    issue === "emotionally-cold" ? "感情への返答なのに、寄り添う前に事情聴取や敬語の質問から始まっている" :
+    "空の返答";
+
   await streamAssistantInto(
     assistantMsg,
     history,
-    `さっきの候補「${draft}」は${reason}になっていてコンパニオンとして不自然でした。${state.profile.userCall}との関係性と話し方の設定を優先して、まったく別の自然な返答に言い直してください。「何かお手伝いできますか」「ご用件は」など接客文句は禁止です。`
+    `さっきの候補「${draft}」は${reason}ため、コンパニオンとして不自然でした。${state.profile.userCall}との関係性と話し方の設定を優先して、まったく別の自然な返答に言い直してください。感情の打ち明けには、まず気持ちを受け止めてから親しい一言を返してください。「何かお手伝いできますか」「ご用件は」「どういうこと？」「何か心配事があったんですか？」などの接客・事情聴取文句は禁止です。`
   );
+
+  // 小型モデルが再生成でも同じ癖を出した場合は、会話の温度を守るため安全なローカル返答に着地させる。
+  const secondIssue = companionQualityIssue(userText, assistantMsg.content);
+  if (secondIssue && emotionCategory(userText)) {
+    const fallback = emotionalFallback(userText);
+    if (fallback) {
+      assistantMsg.content = fallback;
+      renderMessages();
+    }
+  }
 }
 
 async function streamAssistantInto(assistantMsg, history, extraInstruction = "") {
