@@ -1,16 +1,8 @@
-そばにいる。β v0.23 Puter.js版
+そばにいる。β v0.24 Puter.js版
 
-やることは1つだけです。
-
-1. GitHubの sobaniiru-beta にある index.html を、このフォルダの index.html で上書き
-2. 公開URLを開く
-3. 「Puter接続」を押す
-4. 初回だけPuterにサインイン
-5. そのまま会話開始
-
-Cloudflare不要
-APIキー不要
-worker.js不要
-cloudflare-worker.js不要
-
-古い worker.js / cloudflare-worker.js がGitHubに残っていても、このv0.23は参照しないので動作には影響しません。後で消してOKです。
+修正内容
+- Aion RPの正式モデルIDへ修正
+- temperatureを0.7へ変更
+- Aion 3.0 / GPT-5.6 Solをモデル選択に追加
+- 唐突な比喩や話者ラベルを抑える会話ルールを追加
+- v0.23の保存データをそのまま引き継ぐ
