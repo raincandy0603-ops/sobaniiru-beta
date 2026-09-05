@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.14</span></h1>
+        <h1>そばにいる。<span>β v0.15</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -99,7 +99,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
           <textarea id="messageInput" rows="2" maxlength="3000" placeholder="話しかける…" disabled></textarea>
           <button id="sendBtn" class="send-btn" type="submit" disabled>送信</button>
         </form>
-        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。生成中は止めず、本当に固まった時だけ救済します。</p>
+        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。Qwen3は実験用、通常会話はGemma 2 2Bを推奨します。</p>
       </section>
 
       <aside id="settingsPanel" class="settings-panel mobile-hidden" aria-label="人格と記憶の設定">
@@ -150,7 +150,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
         <section class="card">
           <h2>端末内AI</h2>
           <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
-          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.14は生成停止修正版。動いている生成を途中で切りません。</p>
+          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.15はモデル安定化版。スマホ標準をGemma 2 2Bに変更しました。</p>
         </section>
 
         <section class="card">
@@ -196,7 +196,7 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 11,
+    version: 12,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -216,11 +216,12 @@ function normalizeState(parsed) {
   // v0.2〜v0.3で自動選択された超軽量モデルは、v0.4で一度だけ会話品質優先へ戻す。
   const shouldUpgradeOldTinyModel =
     (incomingVersion < 4 && /(?:0\.5B|0\.6B|360M)/i.test(oldModel)) ||
-    (incomingVersion < 6 && oldModel === "Qwen2.5-1.5B-Instruct-q4f16_1-MLC");
+    (incomingVersion < 6 && oldModel === "Qwen2.5-1.5B-Instruct-q4f16_1-MLC") ||
+    (incomingVersion < 12 && /^Qwen3-/.test(oldModel));
   return {
     ...base,
     ...incoming,
-    version: 11,
+    version: 12,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
@@ -464,11 +465,12 @@ function populateModels() {
   // キャラ会話・ロールプレイ向けだけを表示。
   // Coder / Math / embedding / reasoning-specialized は除外。
   const allowedIds = [
-    "Qwen3-4B-q4f16_1-MLC",
+    "gemma-2-2b-it-q4f16_1-MLC",
+    "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+    "Qwen3-1.7B-q4f16_1-MLC",
     "Qwen2.5-3B-Instruct-q4f16_1-MLC",
     "Llama-3.2-3B-Instruct-q4f16_1-MLC",
-    "Qwen3-1.7B-q4f16_1-MLC",
-    "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+    "Qwen3-4B-q4f16_1-MLC",
     "SmolLM2-1.7B-Instruct-q4f16_1-MLC"
   ];
 
@@ -487,11 +489,12 @@ function populateModels() {
   els.modelSelect.innerHTML = "";
 
   const labelFor = (id) => {
-    if (id === "Qwen3-4B-q4f16_1-MLC") return "💗 高品質ロールプレイ";
-    if (id === "Qwen2.5-3B-Instruct-q4f16_1-MLC") return "✨ 安定・高品質";
-    if (id === "Llama-3.2-3B-Instruct-q4f16_1-MLC") return "🎭 自然会話";
-    if (id === "Qwen3-1.7B-q4f16_1-MLC") return "🌷 推奨・軽量ロールプレイ";
+    if (id === "gemma-2-2b-it-q4f16_1-MLC") return "🌸 推奨・会話安定";
     if (id === "Qwen2.5-1.5B-Instruct-q4f16_1-MLC") return "🪶 軽量・安定";
+    if (id === "Qwen3-1.7B-q4f16_1-MLC") return "🧪 実験用・Qwen3";
+    if (id === "Qwen2.5-3B-Instruct-q4f16_1-MLC") return "✨ 高品質・重め";
+    if (id === "Llama-3.2-3B-Instruct-q4f16_1-MLC") return "🎭 自然会話・重め";
+    if (id === "Qwen3-4B-q4f16_1-MLC") return "🧪 実験用・高品質";
     return "軽量";
   };
 
@@ -507,22 +510,21 @@ function populateModels() {
   const isMobileLike = window.matchMedia("(max-width: 900px)").matches;
   const qualityPreferred = isMobileLike
     ? [
-        "Qwen3-1.7B-q4f16_1-MLC",
+        "gemma-2-2b-it-q4f16_1-MLC",
         "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
-        "Qwen2.5-3B-Instruct-q4f16_1-MLC",
-        "Llama-3.2-3B-Instruct-q4f16_1-MLC"
+        "Qwen3-1.7B-q4f16_1-MLC"
       ]
     : (deviceMem >= 8
       ? [
-          "Qwen3-4B-q4f16_1-MLC",
           "Qwen2.5-3B-Instruct-q4f16_1-MLC",
           "Llama-3.2-3B-Instruct-q4f16_1-MLC",
-          "Qwen3-1.7B-q4f16_1-MLC"
+          "gemma-2-2b-it-q4f16_1-MLC",
+          "Qwen3-4B-q4f16_1-MLC"
         ]
       : [
-          "Qwen3-1.7B-q4f16_1-MLC",
-          "Qwen2.5-3B-Instruct-q4f16_1-MLC",
-          "Qwen2.5-1.5B-Instruct-q4f16_1-MLC"
+          "gemma-2-2b-it-q4f16_1-MLC",
+          "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+          "Qwen3-1.7B-q4f16_1-MLC"
         ]);
 
   const manualChoice =
@@ -545,9 +547,10 @@ function populateModels() {
       : "必要メモリ不明";
 
     const mode =
-      choice.startsWith("Qwen3-4B") ? "高品質ロールプレイ" :
-      choice.startsWith("Qwen3-1.7B") ? "軽量ロールプレイ" :
-      "会話向け";
+      choice.startsWith("gemma-2-2b") ? "会話安定モード" :
+      choice.startsWith("Qwen3-") ? "実験モード" :
+      choice.includes("3B") ? "高品質モード" :
+      "軽量会話モード";
 
     els.modelHint.textContent =
       `${mode}モデルを選択中（${size}）。重ければ一段軽いモデルへ変更できます。`;
@@ -1094,7 +1097,7 @@ async function loadModel() {
   } catch (error) {
     console.error(error);
     setStatus("準備エラー", error?.message || "AIを準備できませんでした");
-    showCompat("モデルの準備に失敗しました。高品質モデルが重すぎる場合は、設定から「Qwen3-1.7B」か「Qwen2.5-1.5B」を選んで再試行してください。", "error");
+    showCompat("モデルの準備に失敗しました。モデルが重すぎる場合は、設定から「Gemma 2 2B」か「Qwen2.5-1.5B」を選んで再試行してください。", "error");
     els.load.disabled = false;
   } finally { busy = false; }
 }
