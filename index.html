@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.13</span></h1>
+        <h1>そばにいる。<span>β v0.14</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -99,7 +99,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
           <textarea id="messageInput" rows="2" maxlength="3000" placeholder="話しかける…" disabled></textarea>
           <button id="sendBtn" class="send-btn" type="submit" disabled>送信</button>
         </form>
-        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。Qwen3の思考タグは自動で除去します。</p>
+        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。生成中は止めず、本当に固まった時だけ救済します。</p>
       </section>
 
       <aside id="settingsPanel" class="settings-panel mobile-hidden" aria-label="人格と記憶の設定">
@@ -150,7 +150,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
         <section class="card">
           <h2>端末内AI</h2>
           <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
-          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.13はQwen3表示修正版。思考タグは画面に出しません。</p>
+          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.14は生成停止修正版。動いている生成を途中で切りません。</p>
         </section>
 
         <section class="card">
@@ -196,7 +196,7 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 10,
+    version: 11,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -220,7 +220,7 @@ function normalizeState(parsed) {
   return {
     ...base,
     ...incoming,
-    version: 10,
+    version: 11,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
@@ -764,7 +764,7 @@ function localCompanionReply(userText) {
   // v0.8: 「りゅう好き」「大好き」など本人への好意は、名前混同させず即レス。
   if (isLoveDirectedAtCompanion(raw)) return localLoveReply(raw);
 
-  // v0.12: 雑談開始の短文はモデルを待たず即レス。
+  // v0.14: 「なにか話して」等も含む雑談開始の短文はモデルを待たず即レス。
   const quickIntent = conversationIntent(raw);
   if (["talk-invite", "topic-request", "bored", "what-doing"].includes(quickIntent)) {
     const quick = localConversationStarter(quickIntent);
@@ -817,7 +817,10 @@ function conversationIntent(userText) {
   const raw = String(userText || "").trim();
   const t = compactText(raw);
 
-  if (/(?:何か|なんか)?話題.*(?:ちょうだい|ほしい|欲しい|ある)|(?:話題|ネタ)(?:ちょうだい|ほしい|欲しい)/.test(t)) return "topic-request";
+  if (
+    /^(?:(?:何か|なにか|なんか).*(?:話して|しゃべって|喋って)|(?:話して|しゃべって|喋って))[！!。〜~…]*$/.test(raw) ||
+    /(?:何か|なんか)?話題.*(?:ちょうだい|ほしい|欲しい|ある)|(?:話題|ネタ)(?:ちょうだい|ほしい|欲しい)/.test(t)
+  ) return "topic-request";
   if (/^(?:お?話し?(?:しよ|しよう|しましょ|しましょう|したい|したいな)|話そ|話そう|話したい|話したいな|しゃべろ|しゃべろう|喋ろ|喋ろう|おしゃべりしよ|おしゃべりしよう|おしゃべりしたい)[！!。〜~…]*$/.test(raw)) return "talk-invite";
   if (/^(?:暇|ひま)(?:だ|ー|〜|です|だよ|なんだけど)?[！!。〜~]*$/.test(raw)) return "bored";
   if (/^(?:何|なに)してる[？?！!。〜~]*$/.test(t) || /今(?:何|なに)してる/.test(t)) return "what-doing";
@@ -966,11 +969,21 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
   let rawBuffer = "";
   let lastPaint = performance.now();
   let timedOut = false;
+  let watchdogId = null;
 
-  const timeoutId = setTimeout(() => {
+  const stopGeneration = () => {
     timedOut = true;
     try { engine?.interruptGenerate?.(); } catch {}
-  }, 15000);
+  };
+
+  const armWatchdog = (ms) => {
+    if (watchdogId) clearTimeout(watchdogId);
+    watchdogId = setTimeout(stopGeneration, ms);
+  };
+
+  // 最初のデータが来ない時だけ20秒待つ。
+  // 何か生成され続けている間はタイマーを延長し、「本文1文字で強制終了」を防ぐ。
+  armWatchdog(20000);
 
   try {
     for await (const chunk of stream) {
@@ -979,6 +992,9 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
 
       gotToken = true;
       rawBuffer += delta;
+
+      // データが動いている限りは「固まった」と判定しない。
+      armWatchdog(12000);
 
       // Qwen3の思考タグは表示しない。本文だけ抽出して描画。
       const visible = stripThinkingBlocks(rawBuffer);
@@ -991,15 +1007,15 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
       }
     }
   } finally {
-    clearTimeout(timeoutId);
+    if (watchdogId) clearTimeout(watchdogId);
   }
 
-  const finalVisible = stripThinkingBlocks(rawBuffer);
+  const finalVisible = stripThinkingBlocks(rawBuffer).trim();
 
-  if (finalVisible) {
+  if (finalVisible && !(timedOut && finalVisible.length <= 2)) {
     assistantMsg.content = finalVisible;
-  } else if ((!gotToken || timedOut) && !assistantMsg.content.trim().replace("…", "")) {
-    assistantMsg.content = `ちょっと考え込みすぎた🤣 もう一回、短めに話しかけてみて。`;
+  } else if (timedOut || !gotToken) {
+    assistantMsg.content = `ごめん、ちょっと考え込みすぎた🤣 もう一回話そ。`;
   } else if (assistantMsg.content === "…") {
     assistantMsg.content = "";
   }
