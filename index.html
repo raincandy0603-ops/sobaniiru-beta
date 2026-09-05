@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.8</span></h1>
+        <h1>そばにいる。<span>β v0.9</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -150,7 +150,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
         <section class="card">
           <h2>端末内AI</h2>
           <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
-          <p id="modelHint" class="hint">初回のみネット接続が必要です。モデル本体はブラウザ側にキャッシュされます。</p>
+          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。初回のみモデル本体をダウンロードします。</p>
         </section>
 
         <section class="card">
@@ -196,7 +196,7 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 5,
+    version: 6,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -214,11 +214,13 @@ function normalizeState(parsed) {
   const incomingVersion = Number(incoming.version || 1);
   const oldModel = String(incoming.selectedModel || "");
   // v0.2〜v0.3で自動選択された超軽量モデルは、v0.4で一度だけ会話品質優先へ戻す。
-  const shouldUpgradeOldTinyModel = incomingVersion < 4 && /(?:0\.5B|0\.6B|360M)/i.test(oldModel);
+  const shouldUpgradeOldTinyModel =
+    (incomingVersion < 4 && /(?:0\.5B|0\.6B|360M)/i.test(oldModel)) ||
+    (incomingVersion < 6 && oldModel === "Qwen2.5-1.5B-Instruct-q4f16_1-MLC");
   return {
     ...base,
     ...incoming,
-    version: 5,
+    version: 6,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
@@ -283,8 +285,11 @@ function buildSystemPrompt() {
 ${memoryText}
 
 【会話方針】
+- これはキャラクター会話・ロールプレイである。設定された人格、口調、関係性を会話の途中で忘れない。
 - あなたは汎用アシスタントや受付係ではなく、${p.userCall}と日常を話すコンパニオン。「何かお手伝いできますか？」「ご用件は？」「どうサポートできますか？」のような接客文句は、ユーザーが明確に作業依頼をしていない限り使わない。
 - 日本語で自然に会話する。質問への回答だけでなく、相手の意図や感情を拾って会話を一歩だけ進める。
+- ユーザーの言葉を分析・要約してから返すのではなく、まずその場の相手として自然に反応する。
+- キャラクター設定を説明したり、メタに「私はAIです」と毎回言ったりせず、必要な時だけ簡潔に扱う。
 - ユーザーの文をそのままオウム返ししない。同じ単語だけを返答にしない。
 - 名前だけ・呼びかけだけの短い発言は「呼ばれた」と理解し、「ん？呼んだ？」「ここにいるよ」など人格に合う自然な反応を返す。自分の名前をユーザー名として呼ばない。
 - 挨拶には挨拶を返し、そのあと親しい相手への一言を添える。初対面のカスタマー対応のように振る舞わない。
@@ -404,50 +409,103 @@ function addMemory(text) {
 async function initWebLLM() {
   if (webllm) return;
   setStatus("AIライブラリ準備中", "最初の一回だけ少し待ってね");
-  webllm = await import("https://esm.run/@mlc-ai/web-llm");
+  webllm = await import("https://esm.run/@mlc-ai/web-llm@0.2.84");
   populateModels();
 }
 
 function populateModels() {
   const all = webllm?.prebuiltAppConfig?.model_list || [];
   const deviceMem = Number(navigator.deviceMemory || 0);
-  const maxVram = deviceMem && deviceMem <= 4 ? 1800 : deviceMem && deviceMem <= 6 ? 2400 : 3200;
-  const candidates = all.filter((m) => {
-    const id = String(m.model_id || "");
-    const vram = Number(m.vram_required_MB || 99999);
-    return /instruct/i.test(id) && vram <= maxVram;
-  }).sort((a, b) => Number(a.vram_required_MB || 99999) - Number(b.vram_required_MB || 99999));
 
-  els.modelSelect.innerHTML = "";
-  for (const m of candidates) {
-    const option = document.createElement("option"); option.value = m.model_id;
-    const gb = m.vram_required_MB ? ` / 約${(m.vram_required_MB / 1024).toFixed(1)}GB` : "";
-    option.textContent = `${m.model_id}${gb}`; els.modelSelect.appendChild(option);
-  }
-
-  const qualityPreferred = [
+  // キャラ会話・ロールプレイ向けだけを表示。
+  // Coder / Math / embedding / reasoning-specialized は除外。
+  const allowedIds = [
+    "Qwen3-4B-q4f16_1-MLC",
+    "Qwen2.5-3B-Instruct-q4f16_1-MLC",
+    "Llama-3.2-3B-Instruct-q4f16_1-MLC",
     "Qwen3-1.7B-q4f16_1-MLC",
     "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
-    "Qwen2.5-1.5B-Instruct-q4f32_1-MLC",
-    "SmolLM2-1.7B-Instruct-q4f16_1-MLC",
-    "Qwen3-0.6B-q4f16_1-MLC",
-    "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
-    "Qwen2-0.5B-Instruct-q4f16_1-MLC",
-    "SmolLM2-360M-Instruct-q4f16_1-MLC"
+    "SmolLM2-1.7B-Instruct-q4f16_1-MLC"
   ];
+
+  const maxVram =
+    deviceMem && deviceMem <= 4 ? 2200 :
+    deviceMem && deviceMem <= 6 ? 2800 :
+    deviceMem && deviceMem >= 8 ? 3800 :
+    3000;
+
+  const byId = new Map(all.map((m) => [String(m.model_id || ""), m]));
+  const candidates = allowedIds
+    .map((id) => byId.get(id))
+    .filter(Boolean)
+    .filter((m) => Number(m.vram_required_MB || 99999) <= maxVram);
+
+  els.modelSelect.innerHTML = "";
+
+  const labelFor = (id) => {
+    if (id === "Qwen3-4B-q4f16_1-MLC") return "💗 高品質ロールプレイ";
+    if (id === "Qwen2.5-3B-Instruct-q4f16_1-MLC") return "✨ 安定・高品質";
+    if (id === "Llama-3.2-3B-Instruct-q4f16_1-MLC") return "🎭 自然会話";
+    if (id === "Qwen3-1.7B-q4f16_1-MLC") return "🌷 軽量ロールプレイ";
+    if (id === "Qwen2.5-1.5B-Instruct-q4f16_1-MLC") return "🪶 軽量・安定";
+    return "軽量";
+  };
+
+  for (const m of candidates) {
+    const option = document.createElement("option");
+    option.value = m.model_id;
+    const gb = m.vram_required_MB ? ` / 約${(m.vram_required_MB / 1024).toFixed(1)}GB` : "";
+    option.textContent = `${labelFor(m.model_id)}｜${m.model_id}${gb}`;
+    els.modelSelect.appendChild(option);
+  }
+
   const available = new Set(candidates.map((m) => m.model_id));
-  const manualChoice = state.modelChoiceMode === "manual" && state.selectedModel && available.has(state.selectedModel);
+  const qualityPreferred =
+    deviceMem >= 8
+      ? [
+          "Qwen3-4B-q4f16_1-MLC",
+          "Qwen2.5-3B-Instruct-q4f16_1-MLC",
+          "Llama-3.2-3B-Instruct-q4f16_1-MLC",
+          "Qwen3-1.7B-q4f16_1-MLC",
+          "Qwen2.5-1.5B-Instruct-q4f16_1-MLC"
+        ]
+      : [
+          "Qwen3-1.7B-q4f16_1-MLC",
+          "Qwen2.5-3B-Instruct-q4f16_1-MLC",
+          "Llama-3.2-3B-Instruct-q4f16_1-MLC",
+          "Qwen2.5-1.5B-Instruct-q4f16_1-MLC"
+        ];
+
+  const manualChoice =
+    state.modelChoiceMode === "manual" &&
+    state.selectedModel &&
+    available.has(state.selectedModel);
+
   const choice = manualChoice
-    ? state.selectedModel : qualityPreferred.find((id) => available.has(id)) || candidates[candidates.length - 1]?.model_id || "";
+    ? state.selectedModel
+    : qualityPreferred.find((id) => available.has(id)) || candidates[0]?.model_id || "";
 
   if (choice) {
-    els.modelSelect.value = choice; state.selectedModel = choice; saveState();
+    els.modelSelect.value = choice;
+    state.selectedModel = choice;
+    saveState();
+
     const selected = candidates.find((m) => m.model_id === choice);
-    const size = selected?.vram_required_MB ? `（必要メモリ目安 約${(selected.vram_required_MB / 1024).toFixed(1)}GB）` : "";
-    els.modelHint.textContent = `会話品質を優先して、この端末で動かしやすいモデルを選びました${size}。重い場合は設定から小さいモデルに変えられます。`;
+    const size = selected?.vram_required_MB
+      ? `必要メモリ目安 約${(selected.vram_required_MB / 1024).toFixed(1)}GB`
+      : "必要メモリ不明";
+
+    const mode =
+      choice.startsWith("Qwen3-4B") ? "高品質ロールプレイ" :
+      choice.startsWith("Qwen3-1.7B") ? "軽量ロールプレイ" :
+      "会話向け";
+
+    els.modelHint.textContent =
+      `${mode}モデルを選択中（${size}）。重ければ一段軽いモデルへ変更できます。`;
   } else {
-    els.modelSelect.innerHTML = `<option value="">対応モデルが見つかりません</option>`;
-    els.modelHint.textContent = "この端末向けのモデル候補を取得できませんでした。";
+    els.modelSelect.innerHTML = `<option value="">対応する会話モデルが見つかりません</option>`;
+    els.modelHint.textContent =
+      "この端末で使えるロールプレイ向けモデルを取得できませんでした。";
   }
 }
 
@@ -693,11 +751,21 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
 
 async function streamAssistantInto(assistantMsg, history, extraInstruction = "") {
   const system = buildSystemPrompt() + (extraInstruction ? `\n\n【今回だけの追加指示】\n${extraInstruction}` : "");
-  const stream = await engine.chat.completions.create({
+  const request = {
     stream: true,
     messages: [{ role: "system", content: system }, ...history],
-    temperature: 0.78, top_p: 0.9, repetition_penalty: 1.08, max_tokens: 460
-  });
+    temperature: 0.82,
+    top_p: 0.92,
+    repetition_penalty: 1.06,
+    max_tokens: 520
+  };
+
+  // Qwen3はロールプレイ中の思考ブロックを出さず、会話だけ返す。
+  if (String(state.selectedModel || "").startsWith("Qwen3-")) {
+    request.extra_body = { enable_thinking: false };
+  }
+
+  const stream = await engine.chat.completions.create(request);
   for await (const chunk of stream) {
     assistantMsg.content += chunk.choices?.[0]?.delta?.content || "";
     renderMessages();
@@ -767,7 +835,7 @@ async function loadModel() {
   } catch (error) {
     console.error(error);
     setStatus("準備エラー", error?.message || "AIを準備できませんでした");
-    showCompat("モデルの準備に失敗しました。通信状態・空き容量・WebGPU対応状況を確認して、もう一度試してください。", "error");
+    showCompat("モデルの準備に失敗しました。高品質モデルが重すぎる場合は、設定から「Qwen3-1.7B」か「Qwen2.5-1.5B」を選んで再試行してください。", "error");
     els.load.disabled = false;
   } finally { busy = false; }
 }
