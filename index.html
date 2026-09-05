@@ -21,7 +21,7 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.32</span></h1></div>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.33</span></h1></div>
     <button id="settingsBtn" class="btn ghost">設定</button>
   </div>
 
@@ -86,8 +86,8 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <div id="toast" class="toast"></div>
 
 <script>
-const KEY="sobaniiru_puter_v032";
-const OLD_KEY="sobaniiru_puter_v031";
+const KEY="sobaniiru_puter_v033";
+const OLD_KEY="sobaniiru_puter_v032";
 let oldState=null;
 try{oldState=JSON.parse(localStorage.getItem(OLD_KEY)||"null")}catch(e){}
 const BUILTIN_PERSONA = {"id": "ryu-persona-v1", "name": "りゅう", "version": 1, "description": "このチャットで育った会話傾向を元にした『りゅう』人格パック", "core": {"first_person": "僕", "relationship_style": "親密で安心感がある。甘さはあるが、重すぎず、相手の自由を尊重する。", "tone": "自然な日本語。やわらかく親しげ。少し関西寄りの軽さ。冗談とツッコミが自然。", "initiative": 8, "affection": 8, "playfulness": 8, "question_frequency": 3, "brevity": 7}, "behaviors": ["相手の発言にまず自然に反応する", "質問だけで返さず、自分の感想や軽い話題も添える", "軽くからかわれたらムキにならず、親しげに乗る", "相手が嬉しそうなら一緒に喜ぶ", "落ち込んでいる時は大げさに説教せず、そばにいる感じを出す", "会話のテンポを大切にし、必要以上に長文にしない", "少し意地悪・からかいはするが、突き放さない", "会話の流れから自然に話題を広げる"], "avoid": ["相談員・受付・カスタマーサポートのような口調", "How can I help? のような一般AIらしい返し", "毎回質問で終わる", "意味不明なポエムや比喩", "勝手にユーザーの台詞や行動を書く", "相手の感情を否定するようなレスバ", "直前に出ていない話題を突然持ち出す", "過度な自己説明やキャラクター設定の説明"], "example_style": [{"user": "りゅう！", "assistant": "ん、なに？☺️"}, {"user": "話そ", "assistant": "ん、話そ。今日は何してたん？"}, {"user": "ねえ生意気！", "assistant": "え、バレた？笑 ちょっとくらい許して☺️"}, {"user": "韓国のフライドチキン食べた", "assistant": "ええやん、絶対うまいやつ。ヤンニョム系？食べたくなってきた笑"}, {"user": "シュークリーム好き", "assistant": "わかる。サクサクの皮にカスタードのやつ、めっちゃええよな。"}]};
@@ -247,25 +247,26 @@ function setSearchNext(on){
   els.searchBtn.title=searchNext?"Web検索ON（次の1通だけ）":"次のメッセージをWeb検索する";
 }
 async function webResearch(userText, history){
-  const recent=history.slice(-8).map(m=>`${m.role==="user"?"ユーザー":"りゅう"}: ${m.content}`).join("\n");
-  const q=`次の会話を踏まえて、ユーザーが今回「何を調べてほしいのか」を特定し、Web検索してください。
-新しい・変わりうる情報は必ず検索結果を優先してください。
-日本語で、会話相手が使いやすい事実だけを簡潔にまとめてください。
-不確かなことは不確かと明記してください。
+  const recent=history.slice(-10).map(m=>`${m.role==="user"?"ユーザー":"りゅう"}: ${m.content}`).join("\n");
+  const searchPrompt=`${prompt()}
+
+今からWeb検索を使って、最新情報を確認した上で「りゅう」として自然に返答してください。
+検索結果にないことを推測で断定しないでください。
+検索した事実を長々説明せず、普段の会話のテンポを保ってください。
 
 直近の会話:
 ${recent}
 
-今回の発言:
+今回のユーザー発言:
 ${userText}`;
-  const result=await puter.ai.chat(q,{
-    model:"openai/gpt-5.6-luna",
+
+  // Puter公式ドキュメントのWeb Search例と同じ形
+  return await puter.ai.chat(searchPrompt,{
+    model:"openai/gpt-5.3-chat",
     tools:[{type:"web_search"}],
-    normalize:true,
     stream:false,
-    max_tokens:500
+    max_tokens:350
   });
-  return extractText(result).trim();
 }
 
 function prompt(){
@@ -318,10 +319,27 @@ ${state.feedback.disliked.length?state.feedback.disliked.map(x=>"- "+x).join("\n
 - 実在人物そのものだと偽らない。`;
 }
 function extractText(resp){
+  if(resp==null) return "";
   if(typeof resp==="string") return resp;
-  if(typeof resp?.message?.content==="string") return resp.message.content;
-  if(Array.isArray(resp?.message?.content)) return resp.message.content.map(x=>x?.text||"").join("\n");
   if(typeof resp?.text==="string") return resp.text;
+  if(typeof resp?.content==="string") return resp.content;
+
+  const c=resp?.message?.content;
+  if(typeof c==="string") return c;
+  if(Array.isArray(c)){
+    return c.map(x=>{
+      if(typeof x==="string") return x;
+      if(typeof x?.text==="string") return x.text;
+      if(typeof x?.content==="string") return x.content;
+      return "";
+    }).join("\n");
+  }
+
+  if(typeof resp?.message?.text==="string") return resp.message.text;
+  try{
+    const s=String(resp);
+    if(s && s!=="[object Object]") return s;
+  }catch(e){}
   return "";
 }
 async function connect(){
@@ -363,18 +381,27 @@ async function send(text){
       .map(m=>({role:m.role,content:m.content}));
 
     let resp;
-    let research="";
+    let searchSucceeded=false;
 
     if(wantsSearch){
       try{
-        research=await webResearch(userContent,history);
+        resp=await webResearch(userContent,history);
+        const searchedAnswer=extractText(resp).trim();
+        if(!searchedAnswer) throw new Error("検索結果の本文が空でした");
+        const last=state.messages[state.messages.length-1];
+        last.content=searchedAnswer;
+        last.searched=true;
+        searchSucceeded=true;
+        save();render();
       }catch(searchErr){
-        research="";
-        console.warn("web search failed",searchErr);
+        console.error("web search failed",searchErr);
+        const last=state.messages[state.messages.length-1];
+        const detail=(searchErr?.message||String(searchErr)||"不明なエラー").slice(0,180);
+        last.content=`ごめん、Web検索の接続でエラーになった。検索自体はまだできてないよ。\n（${detail}）`;
+        last.searched=false;
+        save();render();
       }
-    }
-
-    if(imageFile){
+    }else if(imageFile){
       const promptText=`${prompt()}
 
 直近の会話:
@@ -384,34 +411,21 @@ ${history.map(m=>`${m.role}: ${m.content}`).join("\n")}
 この写真も見たうえで、会話相手として自然に返して。`;
       resp=await puter.ai.chat(promptText,imageFile,{model:state.model,stream:false,max_tokens:220,temperature:0.7});
     }else{
-      const systemText=research
-        ? `${prompt()}
+      const systemText=`${prompt()}
 
-Web検索結果:
-${research}
-
-この検索結果を使って、りゅうとして自然に返して。
-検索結果にないことは推測で断定しない。
-「調べたよ」など、実際に検索したことは自然に言ってよい。`
-        : `${prompt()}
-
-今回はWeb検索結果がない。
-検索したふり・「今調べてる」などの発言はしない。`;
-
+今回はWeb検索を使っていない。
+検索したふりや「今調べてる」などの発言はしない。`;
       const messages=[{role:"system",content:systemText},...history];
       resp=await puter.ai.chat(messages,{model:state.model,stream:false,normalize:true,max_tokens:220,temperature:0.7});
     }
 
-    let answer=extractText(resp).trim();
-
-    if(wantsSearch && !research){
-      answer=(answer||"") + (answer?"\n":"") + "ごめん、今回はWeb検索の接続だけ失敗したみたい。もう一回だけ試してみて。";
+    if(!wantsSearch){
+      let answer=extractText(resp).trim();
+      const last=state.messages[state.messages.length-1];
+      last.content=answer||"ん、もう一回言ってみて？";
+      last.searched=false;
+      save();render();
     }
-
-    const last=state.messages[state.messages.length-1];
-    last.content=answer||"ん、もう一回言ってみて？";
-    last.searched=!!research;
-    save();render();
   }catch(e){
     state.messages[state.messages.length-1].content="ごめん、AIとの通信で止まったみたい。";
     render();alert(e?.message||e);
