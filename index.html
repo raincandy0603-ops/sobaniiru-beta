@@ -37,7 +37,7 @@ button,input,textarea,select{font:inherit} button{cursor:pointer} .hidden{displa
 .app-shell{max-width:1320px;margin:0 auto;padding:24px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.top-actions{display:flex;gap:8px;align-items:center}
 .eyebrow{margin:0 0 4px;color:var(--muted);font-size:12px;letter-spacing:.14em;text-transform:uppercase}h1{margin:0;font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.04em}h1 span{font-size:.36em;vertical-align:top;color:var(--accent);margin-left:6px}h2{font-size:16px;margin:0 0 14px}
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}.chat-panel,.settings-panel .card{background:rgba(255,253,251,.95);border:1px solid var(--line);box-shadow:var(--shadow)}.chat-panel{border-radius:26px;min-height:76vh;overflow:hidden;display:flex;flex-direction:column}
-.status-strip{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center;justify-content:space-between;background:rgba(255,255,255,.65)}.status-strip strong{display:block;font-size:14px}.status-strip span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.status-strip{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center;justify-content:space-between;background:rgba(255,255,255,.65)}.status-actions{display:flex;gap:8px;align-items:center}.status-strip strong{display:block;font-size:14px}.status-strip span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 .compat-notice{margin:12px 14px 0;padding:11px 13px;border-radius:14px;font-size:12px;line-height:1.6}.compat-notice.warn{background:#fff7e9;border:1px solid #efd7ab;color:#765720}.compat-notice.error{background:#fff3f4;border:1px solid #efcfd4;color:#853e49}
 .progress-wrap{padding:10px 18px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.progress-track{height:7px;background:#eee5e3;border-radius:999px;overflow:hidden}.progress-bar{height:100%;width:0;background:var(--accent);transition:width .25s ease}.progress-wrap span{color:var(--muted);font-size:11px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .messages{flex:1;padding:22px 18px 10px;overflow-y:auto;min-height:420px;max-height:calc(100vh - 275px);scroll-behavior:smooth}.empty-state{text-align:center;color:var(--muted);font-size:13px;line-height:1.7;margin:auto;padding:64px 18px}.empty-state p{margin:5px 0}.empty-mark{width:54px;height:54px;margin:0 auto 14px;border-radius:18px;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);font-size:25px}
@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.15</span></h1>
+        <h1>そばにいる。<span>β v0.16</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -85,7 +85,10 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
             <strong id="statusText">起動チェック中</strong>
             <span id="statusDetail">この端末で使えるか確認しています</span>
           </div>
-          <button id="loadModelBtn" class="primary-btn" type="button">AIを準備する</button>
+          <div class="status-actions">
+            <button id="cancelGenerateBtn" class="ghost-btn hidden" type="button">停止</button>
+            <button id="loadModelBtn" class="primary-btn" type="button">AIを準備する</button>
+          </div>
         </div>
         <div id="compatNotice" class="compat-notice hidden"></div>
         <div id="progressWrap" class="progress-wrap hidden" aria-live="polite">
@@ -99,7 +102,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
           <textarea id="messageInput" rows="2" maxlength="3000" placeholder="話しかける…" disabled></textarea>
           <button id="sendBtn" class="send-btn" type="submit" disabled>送信</button>
         </form>
-        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。Qwen3は実験用、通常会話はGemma 2 2Bを推奨します。</p>
+        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。重い返答はWorker内で完成してから表示します。</p>
       </section>
 
       <aside id="settingsPanel" class="settings-panel mobile-hidden" aria-label="人格と記憶の設定">
@@ -150,7 +153,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
         <section class="card">
           <h2>端末内AI</h2>
           <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
-          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.15はモデル安定化版。スマホ標準をGemma 2 2Bに変更しました。</p>
+          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.16はWorker版。AI推論を別スレッドへ移してスマホの固まりを減らします。</p>
         </section>
 
         <section class="card">
@@ -175,7 +178,7 @@ const MAX_MEMORIES = 80;
 const $ = (id) => document.getElementById(id);
 const els = {
   messages: $("messages"), form: $("chatForm"), input: $("messageInput"), send: $("sendBtn"),
-  load: $("loadModelBtn"), modelSelect: $("modelSelect"), modelHint: $("modelHint"),
+  load: $("loadModelBtn"), cancel: $("cancelGenerateBtn"), modelSelect: $("modelSelect"), modelHint: $("modelHint"),
   status: $("statusText"), statusDetail: $("statusDetail"), compatNotice: $("compatNotice"),
   progressWrap: $("progressWrap"), progressBar: $("progressBar"), progressText: $("progressText"),
   aiName: $("aiName"), firstPerson: $("firstPerson"), userCall: $("userCall"), relationship: $("relationship"),
@@ -190,13 +193,15 @@ const els = {
 
 let webllm = null;
 let engine = null;
+let inferenceWorker = null;
 let busy = false;
+let generationCancelled = false;
 let deferredInstallPrompt = null;
 let state = loadState();
 
 function defaultState() {
   return {
-    version: 12,
+    version: 13,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -221,7 +226,7 @@ function normalizeState(parsed) {
   return {
     ...base,
     ...incoming,
-    version: 12,
+    version: 13,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
@@ -234,7 +239,7 @@ function normalizeState(parsed) {
           })
           .filter((m) => {
             const c = String(m?.content || "").trim();
-            return m?.role === "user" || (m?.role === "assistant" && c);
+            return m?.role === "user" || (m?.role === "assistant" && c && c !== "考え中…");
           })
       : []
   };
@@ -379,7 +384,7 @@ function stripThinkingBlocks(value) {
 
 function cleanStoredAssistantText(value) {
   const cleaned = stripThinkingBlocks(value).trim();
-  return cleaned === "…" ? "" : cleaned;
+  return (cleaned === "…" || cleaned === "考え中…") ? "" : cleaned;
 }
 
 function updateLastAssistantBubbleFast(content) {
@@ -946,85 +951,48 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
 
 async function streamAssistantInto(assistantMsg, history, extraInstruction = "") {
   const system = buildSystemPrompt() + (extraInstruction ? `\n\n【今回だけの追加指示】\n${extraInstruction}` : "");
+
   const request = {
-    stream: true,
+    stream: false,
     messages: [{ role: "system", content: system }, ...history],
-    temperature: 0.84,
+    temperature: 0.82,
     top_p: 0.92,
-    repetition_penalty: 1.06,
-    max_tokens: 180
+    repetition_penalty: 1.05,
+    max_tokens: 120
   };
 
-  // Qwen3はロールプレイ中の思考ブロックを出さず、会話だけ返す。
   if (String(state.selectedModel || "").startsWith("Qwen3-")) {
     request.extra_body = { enable_thinking: false };
-
-    // WebLLM/Qwen3の構成によっては空の<think>ブロックが出ることがあるため、
-    // soft switchも併用する。画面側でも必ず除去する。
     const last = request.messages[request.messages.length - 1];
     if (last?.role === "user" && typeof last.content === "string" && !last.content.includes("/no_think")) {
       last.content += " /no_think";
     }
   }
 
-  const stream = await engine.chat.completions.create(request);
-  let gotToken = false;
-  let rawBuffer = "";
-  let lastPaint = performance.now();
-  let timedOut = false;
-  let watchdogId = null;
-
-  const stopGeneration = () => {
-    timedOut = true;
-    try { engine?.interruptGenerate?.(); } catch {}
-  };
-
-  const armWatchdog = (ms) => {
-    if (watchdogId) clearTimeout(watchdogId);
-    watchdogId = setTimeout(stopGeneration, ms);
-  };
-
-  // 最初のデータが来ない時だけ20秒待つ。
-  // 何か生成され続けている間はタイマーを延長し、「本文1文字で強制終了」を防ぐ。
-  armWatchdog(20000);
+  generationCancelled = false;
+  els.cancel?.classList.remove("hidden");
+  setStatus(`${state.profile.aiName} 考え中`, "画面はそのまま使えます");
 
   try {
-    for await (const chunk of stream) {
-      const delta = chunk.choices?.[0]?.delta?.content || "";
-      if (!delta) continue;
+    // Web Worker内で最後まで生成し、完成文だけ画面へ出す。
+    const result = await engine.chat.completions.create(request);
 
-      gotToken = true;
-      rawBuffer += delta;
-
-      // データが動いている限りは「固まった」と判定しない。
-      armWatchdog(12000);
-
-      // Qwen3の思考タグは表示しない。本文だけ抽出して描画。
-      const visible = stripThinkingBlocks(rawBuffer);
-      const now = performance.now();
-
-      if (visible && now - lastPaint >= 150) {
-        assistantMsg.content = visible;
-        lastPaint = now;
-        if (!updateLastAssistantBubbleFast(assistantMsg.content)) renderMessages();
-      }
+    if (generationCancelled) {
+      assistantMsg.content = "いったん止めたよ。";
+      return;
     }
+
+    const raw = result?.choices?.[0]?.message?.content || "";
+    const cleaned = stripThinkingBlocks(raw).trim();
+
+    assistantMsg.content = cleaned || "ん、もう一回言ってみて？";
   } finally {
-    if (watchdogId) clearTimeout(watchdogId);
+    els.cancel?.classList.add("hidden");
+    if (engine) setStatus(`${state.profile.aiName} 起動中`, "端末内で会話できます");
+    renderMessages();
   }
-
-  const finalVisible = stripThinkingBlocks(rawBuffer).trim();
-
-  if (finalVisible && !(timedOut && finalVisible.length <= 2)) {
-    assistantMsg.content = finalVisible;
-  } else if (timedOut || !gotToken) {
-    assistantMsg.content = `ごめん、ちょっと考え込みすぎた🤣 もう一回話そ。`;
-  } else if (assistantMsg.content === "…") {
-    assistantMsg.content = "";
-  }
-
-  renderMessages();
 }
+
 
 async function generateInitialGreeting() {
   if (!engine || state.messages.length) return;
@@ -1053,7 +1021,7 @@ async function regenerateAssistant(index) {
     const history = state.messages
       .slice(0, index)
       .map((m) => m.role === "assistant" ? { ...m, content: cleanStoredAssistantText(m.content) } : m)
-      .filter((m) => String(m.content || "").trim())
+      .filter((m) => { const c = String(m.content || "").trim(); return c && c !== "考え中…"; })
       .slice(-8)
       .map((m) => ({ role: m.role, content: m.content }));
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content || "";
@@ -1079,13 +1047,23 @@ async function loadModel() {
     state.selectedModel = modelId; saveState();
 
     els.progressWrap.classList.remove("hidden"); setStatus("AIを準備中", "初回はモデルをダウンロードします");
-    engine = await webllm.CreateMLCEngine(modelId, {
-      initProgressCallback: (report) => {
-        const p = Math.max(0, Math.min(1, Number(report.progress || 0)));
-        els.progressBar.style.width = `${Math.round(p * 100)}%`;
-        els.progressText.textContent = report.text || `${Math.round(p * 100)}%`;
-      }, logLevel: "WARN"
-    }, { context_window_size: 4096 });
+    // v0.16: 推論をDedicated Web Workerへ移し、AndroidのUIスレッドを塞がない。
+    try { inferenceWorker?.terminate?.(); } catch {}
+    inferenceWorker = new Worker("./worker.js?v=016", { type: "module" });
+
+    engine = await webllm.CreateWebWorkerMLCEngine(
+      inferenceWorker,
+      modelId,
+      {
+        initProgressCallback: (report) => {
+          const p = Math.max(0, Math.min(1, Number(report.progress || 0)));
+          els.progressBar.style.width = `${Math.round(p * 100)}%`;
+          els.progressText.textContent = report.text || `${Math.round(p * 100)}%`;
+        },
+        logLevel: "WARN"
+      },
+      { context_window_size: 2048 }
+    );
 
     setStatus(`${state.profile.aiName} 起動したよ`, "端末内で会話できます");
     els.load.textContent = "準備できたよ";
@@ -1106,7 +1084,7 @@ async function sendMessage(text) {
   const clean = text.trim(); if (!clean || !engine || busy) return;
   busy = true; els.input.value = ""; els.input.disabled = true; els.send.disabled = true;
   state.messages.push({ role: "user", content: clean, at: new Date().toISOString() }); saveState(); renderMessages();
-  const assistantMsg = { role: "assistant", content: "…", at: new Date().toISOString() };
+  const assistantMsg = { role: "assistant", content: "考え中…", at: new Date().toISOString() };
   state.messages.push(assistantMsg); renderMessages();
 
   const localReply = localCompanionReply(clean);
@@ -1121,7 +1099,7 @@ async function sendMessage(text) {
     const history = state.messages
       .slice(0, -1)
       .map((m) => m.role === "assistant" ? { ...m, content: cleanStoredAssistantText(m.content) } : m)
-      .filter((m) => String(m.content || "").trim())
+      .filter((m) => { const c = String(m.content || "").trim(); return c && c !== "考え中…"; })
       .slice(-8)
       .map((m) => ({ role: m.role, content: m.content }));
     await streamAssistantInto(assistantMsg, history, conversationDirectorInstruction(clean));
@@ -1176,6 +1154,14 @@ window.addEventListener("appinstalled", () => showInstallButtons(false));
 
 els.form.addEventListener("submit", (e) => { e.preventDefault(); sendMessage(els.input.value); });
 els.input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); els.form.requestSubmit(); } });
+els.cancel?.addEventListener("click", () => {
+  if (!engine || !busy) return;
+  generationCancelled = true;
+  try { engine.interruptGenerate?.(); } catch {}
+  els.cancel.classList.add("hidden");
+  setStatus(`${state.profile.aiName} 停止中`, "返答を止めています");
+});
+
 els.load.addEventListener("click", loadModel);
 els.saveProfile.addEventListener("click", () => { state.profile = readProfileFromForm(); saveState(); renderMessages(); setStatus(els.status.textContent, "プロフィールを保存しました"); });
 els.addMemory.addEventListener("click", () => addMemory(els.memoryInput.value));
@@ -1183,6 +1169,8 @@ els.memoryInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.
 els.modelSelect.addEventListener("change", () => {
   state.selectedModel = els.modelSelect.value; state.modelChoiceMode = "manual"; saveState();
   if (engine) {
+    try { inferenceWorker?.terminate?.(); } catch {}
+    inferenceWorker = null;
     engine = null; els.input.disabled = true; els.send.disabled = true; els.load.disabled = false; els.load.textContent = "AIを準備する";
     setStatus("モデル変更待ち", "新しいモデルを準備してください");
   }
