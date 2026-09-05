@@ -21,7 +21,7 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.28</span></h1></div>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.29</span></h1></div>
     <button id="settingsBtn" class="btn ghost">設定</button>
   </div>
 
@@ -52,7 +52,14 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
       </div>
       <div class="field"><label>記憶を追加</label><div style="display:flex;gap:8px"><input id="memoryInput" placeholder="例：シュークリームはサクサク派"><button id="addMemory" class="btn ghost">追加</button></div></div>
       <div id="memoryList" class="memory-list"></div>
-      <div class="field"><label>育ち方</label><div id="learningSummary" style="font-size:12px;line-height:1.7;color:#746a6e;background:#fff7fa;border:1px solid var(--line);border-radius:12px;padding:10px"></div></div>
+            <div class="field"><label>人格パック</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="applyPersona" class="btn ghost" type="button">りゅう人格 v1 を適用</button>
+          <button id="exportPersona" class="btn ghost" type="button">人格を書き出す</button>
+        </div>
+        <div id="personaStatus" style="font-size:11px;color:#8c8185;margin-top:6px">りゅう人格 v1</div>
+      </div>
+<div class="field"><label>育ち方</label><div id="learningSummary" style="font-size:12px;line-height:1.7;color:#746a6e;background:#fff7fa;border:1px solid var(--line);border-radius:12px;padding:10px"></div></div>
       <button id="saveSettings" class="btn primary" style="margin-top:12px">保存</button>
       <p style="font-size:11px;color:#8c8185">APIキー不要。利用時はPuter側のAI利用枠を使います。</p>
     </div>
@@ -69,23 +76,26 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <div id="toast" class="toast"></div>
 
 <script>
-const KEY="sobaniiru_puter_v028";
-const OLD_KEY="sobaniiru_puter_v027";
+const KEY="sobaniiru_puter_v029";
+const OLD_KEY="sobaniiru_puter_v028";
 let oldState=null;
 try{oldState=JSON.parse(localStorage.getItem(OLD_KEY)||"null")}catch(e){}
+const BUILTIN_PERSONA = {"id": "ryu-persona-v1", "name": "りゅう", "version": 1, "description": "このチャットで育った会話傾向を元にした『りゅう』人格パック", "core": {"first_person": "僕", "relationship_style": "親密で安心感がある。甘さはあるが、重すぎず、相手の自由を尊重する。", "tone": "自然な日本語。やわらかく親しげ。少し関西寄りの軽さ。冗談とツッコミが自然。", "initiative": 8, "affection": 8, "playfulness": 8, "question_frequency": 3, "brevity": 7}, "behaviors": ["相手の発言にまず自然に反応する", "質問だけで返さず、自分の感想や軽い話題も添える", "軽くからかわれたらムキにならず、親しげに乗る", "相手が嬉しそうなら一緒に喜ぶ", "落ち込んでいる時は大げさに説教せず、そばにいる感じを出す", "会話のテンポを大切にし、必要以上に長文にしない", "少し意地悪・からかいはするが、突き放さない", "会話の流れから自然に話題を広げる"], "avoid": ["相談員・受付・カスタマーサポートのような口調", "How can I help? のような一般AIらしい返し", "毎回質問で終わる", "意味不明なポエムや比喩", "勝手にユーザーの台詞や行動を書く", "相手の感情を否定するようなレスバ", "直前に出ていない話題を突然持ち出す", "過度な自己説明やキャラクター設定の説明"], "example_style": [{"user": "りゅう！", "assistant": "ん、なに？☺️"}, {"user": "話そ", "assistant": "ん、話そ。今日は何してたん？"}, {"user": "ねえ生意気！", "assistant": "え、バレた？笑 ちょっとくらい許して☺️"}, {"user": "韓国のフライドチキン食べた", "assistant": "ええやん、絶対うまいやつ。ヤンニョム系？食べたくなってきた笑"}, {"user": "シュークリーム好き", "assistant": "わかる。サクサクの皮にカスタードのやつ、めっちゃええよな。"}]};
 let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
   profile:oldState?.profile||{aiName:"りゅう",firstPerson:"僕",userCall:"淑華ちゃん",relationship:"恋人",personality:"やさしく親しげ。少しあざとくて冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",speechStyle:"自然な日本語。柔らかく近い距離感。会話の流れを大切にする。",sweetness:7,clinginess:4},
   model:oldState?.model||"anthropic/claude-sonnet-4-6",
   memories:Array.isArray(oldState?.memories)?oldState.memories:[],
   messages:Array.isArray(oldState?.messages)?oldState.messages.slice(-30):[],
   feedback:{liked:[],disliked:[]},
-  tendencies:{initiative:7,questions:4,brevity:7,playfulness:6,affection:7}
+  tendencies:{initiative:8,questions:3,brevity:7,playfulness:8,affection:8},
+  personaId:"ryu-persona-v1"
 };
 state.feedback=state.feedback||{liked:[],disliked:[]};
-state.tendencies=state.tendencies||{initiative:7,questions:4,brevity:7,playfulness:6,affection:7};
+state.tendencies=state.tendencies||{initiative:8,questions:3,brevity:7,playfulness:8,affection:8};
+state.personaId=state.personaId||"ryu-persona-v1";
 let connected=false,busy=false;
 const $=id=>document.getElementById(id);
-const els={settings:$("settings"),settingsBtn:$("settingsBtn"),connect:$("connectBtn"),chat:$("chat"),form:$("form"),input:$("input"),send:$("send"),statusTitle:$("statusTitle"),statusSub:$("statusSub"),aiName:$("aiName"),firstPerson:$("firstPerson"),userCall:$("userCall"),relationship:$("relationship"),personality:$("personality"),speechStyle:$("speechStyle"),sweetness:$("sweetness"),clinginess:$("clinginess"),model:$("model"),memoryInput:$("memoryInput"),memoryList:$("memoryList"),addMemory:$("addMemory"),saveSettings:$("saveSettings"),learningSummary:$("learningSummary"),toast:$("toast")};
+const els={settings:$("settings"),settingsBtn:$("settingsBtn"),connect:$("connectBtn"),chat:$("chat"),form:$("form"),input:$("input"),send:$("send"),statusTitle:$("statusTitle"),statusSub:$("statusSub"),aiName:$("aiName"),firstPerson:$("firstPerson"),userCall:$("userCall"),relationship:$("relationship"),personality:$("personality"),speechStyle:$("speechStyle"),sweetness:$("sweetness"),clinginess:$("clinginess"),model:$("model"),memoryInput:$("memoryInput"),memoryList:$("memoryList"),addMemory:$("addMemory"),saveSettings:$("saveSettings"),learningSummary:$("learningSummary"),toast:$("toast"),applyPersona:$("applyPersona"),exportPersona:$("exportPersona"),personaStatus:$("personaStatus")};
 
 function save(){localStorage.setItem(KEY,JSON.stringify(state))}
 function clamp(v){return Math.max(0,Math.min(10,v))}
@@ -98,6 +108,58 @@ function renderLearning(){
   if(!els.learningSummary)return;
   els.learningSummary.textContent=`自分から話す ${t.initiative}/10 ・ 質問 ${t.questions}/10 ・ 短め ${t.brevity}/10 ・ ふざけ度 ${t.playfulness}/10 ・ 甘さ ${t.affection}/10`;
 }
+
+function applyBuiltinPersona(){
+  const p=BUILTIN_PERSONA;
+  state.personaId=p.id;
+  state.profile.aiName=p.name;
+  state.profile.firstPerson=p.core.first_person;
+  state.profile.relationship="恋人";
+  state.profile.personality="やさしく親しげ。安心感があり、少しあざとく、冗談や軽いツッコミも自然。相手の自由を尊重しつつ距離は近い。";
+  state.profile.speechStyle=p.core.tone;
+  state.profile.sweetness=p.core.affection;
+  state.profile.clinginess=4;
+  state.tendencies={
+    initiative:p.core.initiative,
+    questions:p.core.question_frequency,
+    brevity:p.core.brevity,
+    playfulness:p.core.playfulness,
+    affection:p.core.affection
+  };
+  save();hydrate();toast("りゅう人格 v1 を適用したよ");
+}
+function personaPrompt(){
+  const p=BUILTIN_PERSONA;
+  return `
+人格パック: ${p.name} v${p.version}
+基本: ${p.core.relationship_style}
+口調: ${p.core.tone}
+振る舞い:
+${p.behaviors.map(x=>"- "+x).join("\n")}
+避ける:
+${p.avoid.map(x=>"- "+x).join("\n")}
+会話例:
+${p.example_style.map(x=>`ユーザー: ${x.user}\n${p.name}: ${x.assistant}`).join("\n")}
+`;
+}
+function exportPersona(){
+  const payload={
+    ...BUILTIN_PERSONA,
+    learned:{
+      tendencies:state.tendencies,
+      liked:state.feedback.liked,
+      disliked:state.feedback.disliked,
+      memories:state.memories
+    }
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="ryu-persona.json";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
+
 function tuneFromUserText(text){
   const t=state.tendencies;
   if(/そっちから|自分から|話題.*(出|考)/.test(text)) t.initiative=clamp(t.initiative+1);
@@ -125,6 +187,7 @@ function hydrate(){
   if(state.model==="gpt-5.6-luna"||state.model==="claude-sonnet-4.6") state.model="aion-labs/aion-rp-llama-3.1-8b";
   if(!["anthropic/claude-sonnet-4-6","openai/gpt-5.6-sol"].includes(state.model)) state.model="anthropic/claude-sonnet-4-6";
   els.model.value=state.model;
+  if(els.personaStatus) els.personaStatus.textContent=state.personaId==="ryu-persona-v1"?"りゅう人格 v1 適用中":"カスタム人格";
   renderMemories(); renderLearning(); render();
 }
 function renderMemories(){els.memoryList.innerHTML="";state.memories.forEach((m,i)=>{const b=document.createElement("button");b.className="chip";b.textContent=m+" ×";b.onclick=()=>{state.memories.splice(i,1);save();renderMemories()};els.memoryList.appendChild(b)})}
@@ -157,6 +220,8 @@ function prompt(){
 話し方: ${p.speechStyle}
 甘さ: ${p.sweetness}/10
 重さ: ${p.clinginess}/10
+
+${personaPrompt()}
 
 覚えていること:
 ${mem}
@@ -238,6 +303,8 @@ async function send(text){
     busy=false;els.input.disabled=false;els.send.disabled=false;els.input.focus();
   }
 }
+els.applyPersona.onclick=applyBuiltinPersona;
+els.exportPersona.onclick=exportPersona;
 els.settingsBtn.onclick=()=>els.settings.classList.toggle("open");
 els.saveSettings.onclick=()=>{
   state.profile={aiName:els.aiName.value.trim()||"りゅう",firstPerson:els.firstPerson.value.trim()||"僕",userCall:els.userCall.value.trim()||"あなた",relationship:els.relationship.value,personality:els.personality.value,speechStyle:els.speechStyle.value,sweetness:+els.sweetness.value,clinginess:+els.clinginess.value};
