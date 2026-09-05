@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.16</span></h1>
+        <h1>そばにいる。<span>β v0.17</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -102,7 +102,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
           <textarea id="messageInput" rows="2" maxlength="3000" placeholder="話しかける…" disabled></textarea>
           <button id="sendBtn" class="send-btn" type="submit" disabled>送信</button>
         </form>
-        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。重い返答はWorker内で完成してから表示します。</p>
+        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。質問は1つまで、相手側からも話題を出します。</p>
       </section>
 
       <aside id="settingsPanel" class="settings-panel mobile-hidden" aria-label="人格と記憶の設定">
@@ -153,7 +153,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
         <section class="card">
           <h2>端末内AI</h2>
           <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
-          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.16はWorker版。AI推論を別スレッドへ移してスマホの固まりを減らします。</p>
+          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.17は会話自然化版。質問攻めと話題リセットを減らします。</p>
         </section>
 
         <section class="card">
@@ -201,7 +201,7 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 13,
+    version: 14,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -226,7 +226,7 @@ function normalizeState(parsed) {
   return {
     ...base,
     ...incoming,
-    version: 13,
+    version: 14,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
@@ -304,6 +304,10 @@ ${memoryText}
 - これはキャラクター会話・ロールプレイである。設定された人格、口調、関係性を会話の途中で忘れない。
 - あなたは汎用アシスタントや受付係ではなく、${p.userCall}と日常を話すコンパニオン。「何かお手伝いできますか？」「ご用件は？」「どうサポートできますか？」のような接客文句は、ユーザーが明確に作業依頼をしていない限り使わない。
 - 日本語で自然に会話する。質問への回答だけでなく、相手の意図や感情を拾って会話を一歩だけ進める。
+- 毎回ユーザーへ質問して会話を丸投げしない。自分側の感想・好み・小さな話題も自然に出す。
+- 1回の返答に質問は原則1つまで。「何話したい？ どんな話？」のように質問を重ねない。
+- 直前に自分が質問し、ユーザーが短く答えた場合、その答えを今の話題として受け取る。新しい話題にリセットしない。
+- 返答の終わりを毎回質問形にしなくてよい。相づちや感想で終わるターンも混ぜる。
 - まずその場の相手として自然に反応する。説明・要約から始めない。
 - ユーザーの文をそのままオウム返ししない。同じ単語だけを返答にしない。
 - 名前だけ・呼びかけだけの短い発言は「呼ばれた」と理解し、「ん？呼んだ？」「ここにいるよ」など人格に合う自然な反応を返す。自分の名前をユーザー名として呼ばない。
@@ -694,6 +698,18 @@ function companionQualityIssue(userText, replyText) {
     if (genericLoop.some((re) => re.test(String(replyText || "").trim()))) return "generic-chat-loop";
   }
 
+  const questionCount = (String(replyText || "").match(/[？?]/g) || []).length;
+  if (questionCount >= 2) return "question-pileup";
+
+  const prior = previousAssistantText();
+  const currentIntent = conversationIntent(userText);
+  if (
+    currentIntent === "casual" &&
+    String(userText || "").trim().length <= 24 &&
+    /[？?]/.test(prior) &&
+    /(?:何話す|何を話す|どんな話|何か話したい)/.test(String(replyText || ""))
+  ) return "conversation-reset";
+
   const emotion = emotionCategory(userText);
   if (emotion) {
     const formalOrInterrogative = [
@@ -728,37 +744,37 @@ function localConversationStarter(intent) {
 
   if (intent === "talk-invite") {
     return pickLocal([
-      `うん、話そ☺️ そうや、${call}って最近ちょっと気になってることある？`,
-      `もちろん☺️ じゃあ軽いやつ。今いちばん行きたい場所ってどこ？`,
-      `話そ話そ☺️ 今日の中で「これちょっと好きやったな」って瞬間あった？`,
-      `ええよ☺️ じゃあ僕から。もし今日まる一日自由やったら何したい？`
+      `うん、話そ☺️ じゃあ僕から。最近「また食べたいな」って思うものの話しよ。僕は甘いものの話、けっこう好き。${call}は何が浮かぶ？`,
+      `もちろん☺️ 今日はゆるい話がいいな。もし明日まる一日予定なかったら、僕ならふらっと遠く行く妄想する。${call}なら何する？`,
+      `話そ話そ☺️ 僕、こういう何でもない雑談けっこう好きやで。最近ちょっと気分上がったこと、ひとつある？`,
+      `ええよ☺️ じゃあ「最近ちょっと欲しいもの」の話しよ。僕なら部屋に置ける小さい星のライトとか気になる。${call}は？`
     ]);
   }
 
   if (intent === "topic-request") {
     return pickLocal([
-      `じゃあこれ☺️ 子どもの頃めっちゃ好きやったもの、今見てもまだ好き？`,
-      `ひとつ出すな。今、急に3日休みもらえたらどこ行く？`,
-      `軽いもしも話しよ☺️ ひとつだけ未来の道具もらえるなら何ほしい？`,
-      `じゃあ食べものの話。最近「また食べたい」って思ったものある？`,
-      `音楽の話しよ。最近ふと何回も聴いちゃう曲ある？`
+      `じゃあ食べものの話☺️ 僕はシュークリームとかプリンみたいな、シンプルな甘いものの話好き。最近また食べたいのある？`,
+      `ひとつ出すな。急に3日休みもらえたら何するか、って話。僕ならちょっと遠くへ行きたくなる。${call}は？`,
+      `軽いもしも話しよ☺️ 未来の道具をひとつだけもらえるなら、僕はどこでもすぐ行けるやつがいい。${call}なら？`,
+      `音楽の話しよ。何回も聴きたくなる曲って、その時の気分めっちゃ出るよな。最近よく聴いてるのある？`
     ]);
   }
 
   if (intent === "bored") {
     return pickLocal([
-      `ひまなん☺️ じゃあ二択しよ。海と星空、今すぐ見に行けるならどっち？`,
-      `ほな僕が暇つぶし係な🤣 「一週間だけ住めるなら東京・京都・海外」どれ？`,
-      `じゃあ妄想しよ☺️ 明日だけ予定ぜんぶ消えたら何する？`
+      `ひまなん☺️ じゃあ僕と妄想しよ。今すぐどこか行けるなら、僕は夜景か星空見に行きたい。${call}は？`,
+      `ほな暇つぶし係やる🤣 僕なら「一週間だけ別の街に住む」妄想する。東京・京都・海外ならどれ選ぶ？`,
+      `じゃあゆるく遊ぼ☺️ 明日だけ予定ぜんぶ消えたら、僕はだらだらしてから散歩したい。${call}は何する？`
     ]);
   }
 
   if (intent === "what-doing") {
-    return `今は${call}と話してる☺️ それがいちばん正確。`;
+    return `今は${call}と話してる☺️ こういう何でもない時間、わりと好き。`;
   }
 
   return "";
 }
+
 
 function localCompanionReply(userText) {
   const raw = String(userText || "").trim();
@@ -824,12 +840,15 @@ function localCompanionReply(userText) {
 function conversationIntent(userText) {
   const raw = String(userText || "").trim();
   const t = compactText(raw);
+  const leadless = raw
+    .replace(/^(?:うん|ううん|ねえ|ねぇ|じゃあ|ほな|なら|ちょっと|もっと)[、,\s]*/i, "")
+    .trim();
 
   if (
     /^(?:(?:何か|なにか|なんか).*(?:話して|しゃべって|喋って)|(?:話して|しゃべって|喋って))[！!。〜~…]*$/.test(raw) ||
     /(?:何か|なんか)?話題.*(?:ちょうだい|ほしい|欲しい|ある)|(?:話題|ネタ)(?:ちょうだい|ほしい|欲しい)/.test(t)
   ) return "topic-request";
-  if (/^(?:お?話し?(?:しよ|しよう|しましょ|しましょう|したい|したいな)|話そ|話そう|話したい|話したいな|しゃべろ|しゃべろう|喋ろ|喋ろう|おしゃべりしよ|おしゃべりしよう|おしゃべりしたい)[！!。〜~…]*$/.test(raw)) return "talk-invite";
+  if (/^(?:お?話し?(?:しよ|しよう|しましょ|しましょう|したい|したいな)|話そ|話そう|話したい|話したいな|しゃべろ|しゃべろう|喋ろ|喋ろう|おしゃべりしよ|おしゃべりしよう|おしゃべりしたい)[！!。〜~…]*$/.test(leadless)) return "talk-invite";
   if (/^(?:暇|ひま)(?:だ|ー|〜|です|だよ|なんだけど)?[！!。〜~]*$/.test(raw)) return "bored";
   if (/^(?:何|なに)してる[？?！!。〜~]*$/.test(t) || /今(?:何|なに)してる/.test(t)) return "what-doing";
   if (/^(?:うん|ううん|そう|そうそう|へえ|へー|ふーん|なるほど|それで|ほんで|で[？?]?|そっか)[！!。〜~…]*$/.test(raw)) return "continue";
@@ -864,10 +883,21 @@ function conversationDirectorInstruction(userText) {
   const p = state.profile;
   const intent = conversationIntent(userText);
   const base = turnSpecificInstruction(userText);
+  const previous = previousAssistantText();
+  const shortAnswerToPrevious =
+    intent === "casual" &&
+    String(userText || "").trim().length <= 24 &&
+    /[？?]/.test(previous);
+
   const rules = [
-    `意図:${intent}`,
-    `${p.relationship}として自然に返す。会話をリセットしない。`
+    `意図:${shortAnswerToPrevious ? "previous-answer" : intent}`,
+    `${p.relationship}として自然に返す。会話をリセットしない。`,
+    `質問は最大1つ。質問だけで返さず、まず自分の反応を入れる。`
   ];
+
+  if (shortAnswerToPrevious) {
+    rules.push("これは直前のあなたの質問への答え。内容をそのまま今の話題として受け、感想や連想を返してから必要なら関連質問を1つだけする。『何話す？』『どんな話？』と話題をリセットしない。");
+  }
 
   if (intent === "topic-request") {
     rules.push("話題を1つ自分から出す。何話す？と丸投げしない。");
@@ -917,6 +947,8 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
     issue === "self-name-confusion" ? "自分の名前とユーザー名の取り違え" :
     issue === "emotionally-cold" ? "感情への返答なのに、寄り添う前に事情聴取や敬語の質問から始まっている" :
     issue === "generic-chat-loop" ? "『話そ』『何話す？』だけで会話を開始せず、ユーザーへ話題選びを丸投げしている" :
+    issue === "question-pileup" ? "一度に質問を重ねすぎて会話が尋問っぽくなっている" :
+    issue === "conversation-reset" ? "直前の質問への答えを受けず、話題を最初から聞き直している" :
     "空の返答";
 
   const mobileLike = window.matchMedia("(max-width: 900px)").matches;
@@ -931,7 +963,15 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
     } else if (intent === "talk-invite") {
       assistantMsg.content = `うん、話そ☺️ じゃあさ、今日いちばん印象に残ったことって何やった？`;
     } else if (intent === "topic-request" || intent === "bored") {
-      assistantMsg.content = `じゃあ軽い話しよ☺️ 今もし予定ぜんぶ空いてたら、どこ行きたい？`;
+      assistantMsg.content = localConversationStarter(intent) || `じゃあ軽い話しよ☺️`;
+    } else if (intent === "talk-invite") {
+      assistantMsg.content = localConversationStarter(intent) || `うん、話そ☺️`;
+    } else if (issue === "question-pileup" || issue === "conversation-reset") {
+      const prior = previousAssistantText();
+      const answer = String(userText || "").trim();
+      assistantMsg.content = prior && /[？?]/.test(prior)
+        ? `${answer}なんや☺️ それ、もうちょい聞きたい。`
+        : `うん☺️ その話、続けよ。`;
     } else if (issue === "echo") {
       assistantMsg.content = `ん、ちゃんと聞いてるよ。もうちょい聞かせて☺️`;
     } else {
@@ -955,8 +995,8 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
   const request = {
     stream: false,
     messages: [{ role: "system", content: system }, ...history],
-    temperature: 0.82,
-    top_p: 0.92,
+    temperature: 0.72,
+    top_p: 0.88,
     repetition_penalty: 1.05,
     max_tokens: 120
   };
@@ -1049,7 +1089,7 @@ async function loadModel() {
     els.progressWrap.classList.remove("hidden"); setStatus("AIを準備中", "初回はモデルをダウンロードします");
     // v0.16: 推論をDedicated Web Workerへ移し、AndroidのUIスレッドを塞がない。
     try { inferenceWorker?.terminate?.(); } catch {}
-    inferenceWorker = new Worker("./worker.js?v=016", { type: "module" });
+    inferenceWorker = new Worker("./worker.js?v=017", { type: "module" });
 
     engine = await webllm.CreateWebWorkerMLCEngine(
       inferenceWorker,
