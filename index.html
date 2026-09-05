@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>そばにいる。β Smart</title>
+<title>そばにいる。β Puter</title>
+<script src="https://js.puter.com/v2/"></script>
 <style>
 :root{--bg:#f6efeb;--paper:#fffaf7;--ink:#2f292d;--pink:#efd4df;--accent:#a23f62;--line:#eadeda}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
@@ -13,21 +14,21 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 .status{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:16px;border-bottom:1px solid var(--line)}.status strong{display:block}.status small{color:#8c8185}
 .chat{flex:1;min-height:0;overflow:auto;padding:18px}.row{margin:0 0 18px;max-width:84%}.row.user{margin-left:auto}.meta{font-size:11px;color:#8c8185;margin:0 6px 6px}.row.user .meta{text-align:right}.bubble{padding:14px 16px;border-radius:18px;background:var(--pink);white-space:pre-wrap;line-height:1.6}.user .bubble{background:var(--ink);color:#fff}
 .composer{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px;border-top:1px solid var(--line);background:var(--paper)}.composer textarea{resize:none;border:1px solid #ddcbd1;border-radius:16px;padding:13px;min-height:54px;font-size:16px}
-.note{padding:0 14px 12px;font-size:10px;color:#8e8387}.panel{display:none;padding:16px;border-top:1px solid var(--line);background:#fff}.panel.open{display:block}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px;margin-bottom:10px}.field label{font-size:12px;color:#746a6e}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.memory-list{display:flex;flex-wrap:wrap;gap:6px}.chip{background:#f4e8ed;border-radius:999px;padding:6px 9px;font-size:12px}
+.note{padding:0 14px 12px;font-size:10px;color:#8e8387}.panel{display:none;padding:16px;border-top:1px solid var(--line);background:#fff}.panel.open{display:block}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px;margin-bottom:10px}.field label{font-size:12px;color:#746a6e}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.memory-list{display:flex;flex-wrap:wrap;gap:6px}.chip{background:#f4e8ed;border-radius:999px;padding:6px 9px;font-size:12px;border:0}
 @media(max-width:700px){.app{padding:10px}.grid{grid-template-columns:1fr}.shell{min-height:calc(100dvh - 90px)}.row{max-width:92%}h1{font-size:29px}}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β Smart v0.22</span></h1></div>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.23</span></h1></div>
     <button id="settingsBtn" class="btn ghost">設定</button>
   </div>
 
   <section class="shell">
     <div class="status">
-      <div><strong id="statusTitle">Smart未接続</strong><small id="statusSub">接続先を設定してね</small></div>
-      <button id="connectBtn" class="btn primary">Smart接続</button>
+      <div><strong id="statusTitle">Puter未接続</strong><small id="statusSub">最初だけPuterにサインインしてね</small></div>
+      <button id="connectBtn" class="btn primary">Puter接続</button>
     </div>
 
     <div id="settings" class="panel">
@@ -43,12 +44,17 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
         <div class="field"><label>甘さ 0-10</label><input id="sweetness" type="number" min="0" max="10" value="7"></div>
         <div class="field"><label>重さ 0-10</label><input id="clinginess" type="number" min="0" max="10" value="4"></div>
       </div>
-      <div class="field"><label>Smart接続先</label><input id="endpoint" type="url" placeholder="https://xxxx.workers.dev"></div>
-      <div class="field"><label>モデル</label><select id="model"><option value="gpt-5.6-luna">Luna｜おすすめ・低コスト</option><option value="gpt-5.6-terra">Terra｜高品質</option></select></div>
+      <div class="field"><label>AIモデル</label>
+        <select id="model">
+          <option value="aion-rp-llama-3.1-8b">Aion RP 1.0｜ロールプレイ優先</option>
+          <option value="gpt-5.6-luna">GPT-5.6 Luna｜会話品質バランス</option>
+          <option value="claude-sonnet-4.6">Claude Sonnet 4.6｜自然会話</option>
+        </select>
+      </div>
       <div class="field"><label>記憶を追加</label><div style="display:flex;gap:8px"><input id="memoryInput" placeholder="例：シュークリームはサクサク派"><button id="addMemory" class="btn ghost">追加</button></div></div>
       <div id="memoryList" class="memory-list"></div>
       <button id="saveSettings" class="btn primary" style="margin-top:12px">保存</button>
-      <p style="font-size:11px;color:#8c8185">APIキーはこのページに保存しません。Cloudflare Worker側のSecretに置きます。</p>
+      <p style="font-size:11px;color:#8c8185">APIキー不要。利用時はPuter側のAI利用枠を使います。</p>
     </div>
 
     <div id="chat" class="chat"></div>
@@ -57,25 +63,26 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
       <textarea id="input" placeholder="話しかける…" disabled></textarea>
       <button id="send" class="btn primary" disabled>送信</button>
     </form>
-    <div class="note">会話・人格・記憶はこのブラウザ内に保存。返答生成のみSmart AIへ送信します。</div>
+    <div class="note">会話・人格・記憶はこのブラウザ内に保存。AI返答はPuter.js経由で生成します。</div>
   </section>
 </div>
 
 <script>
-const KEY="sobaniiru_smart_v022";
+const KEY="sobaniiru_puter_v023";
 let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
   profile:{aiName:"りゅう",firstPerson:"僕",userCall:"淑華ちゃん",relationship:"恋人",personality:"やさしく親しげ。少しあざとくて冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",speechStyle:"自然な日本語。柔らかく近い距離感。会話の流れを大切にする。",sweetness:7,clinginess:4},
-  endpoint:"",model:"gpt-5.6-luna",memories:[],messages:[]
+  model:"aion-rp-llama-3.1-8b",memories:[],messages:[]
 };
 let connected=false,busy=false;
 const $=id=>document.getElementById(id);
-const els={settings:$("settings"),settingsBtn:$("settingsBtn"),connect:$("connectBtn"),chat:$("chat"),form:$("form"),input:$("input"),send:$("send"),statusTitle:$("statusTitle"),statusSub:$("statusSub"),aiName:$("aiName"),firstPerson:$("firstPerson"),userCall:$("userCall"),relationship:$("relationship"),personality:$("personality"),speechStyle:$("speechStyle"),sweetness:$("sweetness"),clinginess:$("clinginess"),endpoint:$("endpoint"),model:$("model"),memoryInput:$("memoryInput"),memoryList:$("memoryList"),addMemory:$("addMemory"),saveSettings:$("saveSettings")};
+const els={settings:$("settings"),settingsBtn:$("settingsBtn"),connect:$("connectBtn"),chat:$("chat"),form:$("form"),input:$("input"),send:$("send"),statusTitle:$("statusTitle"),statusSub:$("statusSub"),aiName:$("aiName"),firstPerson:$("firstPerson"),userCall:$("userCall"),relationship:$("relationship"),personality:$("personality"),speechStyle:$("speechStyle"),sweetness:$("sweetness"),clinginess:$("clinginess"),model:$("model"),memoryInput:$("memoryInput"),memoryList:$("memoryList"),addMemory:$("addMemory"),saveSettings:$("saveSettings")};
 
 function save(){localStorage.setItem(KEY,JSON.stringify(state))}
 function hydrate(){
   const p=state.profile;
   for(const k of ["aiName","firstPerson","userCall","relationship","personality","speechStyle","sweetness","clinginess"]) if(els[k]) els[k].value=p[k];
-  els.endpoint.value=state.endpoint||""; els.model.value=state.model||"gpt-5.6-luna"; renderMemories(); render();
+  els.model.value=state.model||"aion-rp-llama-3.1-8b";
+  renderMemories(); render();
 }
 function renderMemories(){els.memoryList.innerHTML="";state.memories.forEach((m,i)=>{const b=document.createElement("button");b.className="chip";b.textContent=m+" ×";b.onclick=()=>{state.memories.splice(i,1);save();renderMemories()};els.memoryList.appendChild(b)})}
 function render(){
@@ -97,6 +104,7 @@ ${mem}
 
 会話ルール:
 - 日本語で、人間同士の自然な雑談として返す。
+- ロールプレイを優先し、人格・口調・関係性を途中で忘れない。
 - 汎用アシスタント、相談窓口、受付のような口調にしない。
 - 文脈を維持し、短い返事でも直前の話題を引き継ぐ。
 - 毎回質問で終わらない。自分側の感想、冗談、連想、軽い話題も出す。
@@ -106,25 +114,50 @@ ${mem}
 - キャラクター設定を説明せず、その人格として自然に会話する。
 - 実在人物そのものだと偽らない。`;
 }
+function extractText(resp){
+  if(typeof resp==="string") return resp;
+  if(typeof resp?.message?.content==="string") return resp.message.content;
+  if(Array.isArray(resp?.message?.content)) return resp.message.content.map(x=>x?.text||"").join("");
+  if(typeof resp?.text==="string") return resp.text;
+  return "";
+}
 async function connect(){
-  const ep=els.endpoint.value.trim().replace(/\/+$/,""); if(!ep){alert("接続先を入れてね");return}
-  els.connect.disabled=true;els.connect.textContent="確認中…";
-  try{const r=await fetch(ep,{method:"OPTIONS"});if(!r.ok&&r.status!==204)throw new Error("HTTP "+r.status);connected=true;state.endpoint=ep;state.model=els.model.value;save();els.input.disabled=false;els.send.disabled=false;els.statusTitle.textContent=state.profile.aiName+" Smart起動中";els.statusSub.textContent="高性能AIで会話できます";els.connect.textContent="Smart接続済み"}
-  catch(e){connected=false;els.connect.disabled=false;els.connect.textContent="Smart接続";alert("接続できなかった: "+e.message)}
+  els.connect.disabled=true;els.connect.textContent="接続中…";
+  try{
+    if(puter?.auth?.isSignedIn && !puter.auth.isSignedIn()) await puter.auth.signIn();
+    connected=true;
+    els.input.disabled=false;els.send.disabled=false;
+    els.statusTitle.textContent=state.profile.aiName+" 起動中";
+    els.statusSub.textContent="Puter.jsで会話できます";
+    els.connect.textContent="接続済み";
+  }catch(e){
+    connected=false;els.connect.disabled=false;els.connect.textContent="Puter接続";
+    alert("Puterに接続できなかった: "+(e?.message||e));
+  }
 }
 async function send(text){
-  text=text.trim();if(!text||busy||!connected)return;busy=true;els.input.value="";els.input.disabled=true;els.send.disabled=true;
+  text=text.trim();if(!text||busy||!connected)return;
+  busy=true;els.input.value="";els.input.disabled=true;els.send.disabled=true;
   state.messages.push({role:"user",content:text});state.messages.push({role:"assistant",content:"考え中…"});render();
+
   try{
-    const body={model:state.model,instructions:prompt(),messages:state.messages.slice(0,-1).filter(m=>m.content!=="考え中…").slice(-20)};
-    const r=await fetch(state.endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    const d=await r.json();if(!r.ok)throw new Error(d.error||("HTTP "+r.status));
-    state.messages[state.messages.length-1].content=(d.text||"").trim()||"ん、もう一回言ってみて？";save();render();
-  }catch(e){state.messages[state.messages.length-1].content="ごめん、通信で止まったみたい。";render();alert(e.message)}
-  finally{busy=false;els.input.disabled=false;els.send.disabled=false;els.input.focus()}
+    const messages=[{role:"system",content:prompt()},...state.messages.slice(0,-1).filter(m=>m.content!=="考え中…").slice(-20)];
+    const resp=await puter.ai.chat(messages,{model:state.model,stream:false,max_tokens:220,temperature:0.85});
+    const answer=extractText(resp).trim();
+    state.messages[state.messages.length-1].content=answer||"ん、もう一回言ってみて？";
+    save();render();
+  }catch(e){
+    state.messages[state.messages.length-1].content="ごめん、AIとの通信で止まったみたい。";
+    render();alert(e?.message||e);
+  }finally{
+    busy=false;els.input.disabled=false;els.send.disabled=false;els.input.focus();
+  }
 }
 els.settingsBtn.onclick=()=>els.settings.classList.toggle("open");
-els.saveSettings.onclick=()=>{state.profile={aiName:els.aiName.value.trim()||"りゅう",firstPerson:els.firstPerson.value.trim()||"僕",userCall:els.userCall.value.trim()||"あなた",relationship:els.relationship.value,personality:els.personality.value,speechStyle:els.speechStyle.value,sweetness:+els.sweetness.value,clinginess:+els.clinginess.value};state.endpoint=els.endpoint.value.trim();state.model=els.model.value;save();els.settings.classList.remove("open");render()};
+els.saveSettings.onclick=()=>{
+  state.profile={aiName:els.aiName.value.trim()||"りゅう",firstPerson:els.firstPerson.value.trim()||"僕",userCall:els.userCall.value.trim()||"あなた",relationship:els.relationship.value,personality:els.personality.value,speechStyle:els.speechStyle.value,sweetness:+els.sweetness.value,clinginess:+els.clinginess.value};
+  state.model=els.model.value;save();els.settings.classList.remove("open");render()
+};
 els.addMemory.onclick=()=>{const v=els.memoryInput.value.trim();if(!v)return;state.memories.push(v);els.memoryInput.value="";save();renderMemories()};
 els.connect.onclick=connect;
 els.form.onsubmit=e=>{e.preventDefault();send(els.input.value)};
