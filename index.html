@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.17</span></h1>
+        <h1>そばにいる。<span>β v0.18</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -102,7 +102,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
           <textarea id="messageInput" rows="2" maxlength="3000" placeholder="話しかける…" disabled></textarea>
           <button id="sendBtn" class="send-btn" type="submit" disabled>送信</button>
         </form>
-        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。質問は1つまで、相手側からも話題を出します。</p>
+        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。返答生成は端末内。短い雑談は即レス。名前付きの呼びかけでも同じように反応します。</p>
       </section>
 
       <aside id="settingsPanel" class="settings-panel mobile-hidden" aria-label="人格と記憶の設定">
@@ -153,7 +153,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
         <section class="card">
           <h2>端末内AI</h2>
           <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
-          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.17は会話自然化版。質問攻めと話題リセットを減らします。</p>
+          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.18は呼びかけ対応版。『りゅう、話そ』も自然な雑談開始として拾います。</p>
         </section>
 
         <section class="card">
@@ -201,7 +201,7 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 14,
+    version: 15,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -226,7 +226,7 @@ function normalizeState(parsed) {
   return {
     ...base,
     ...incoming,
-    version: 14,
+    version: 15,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
@@ -305,6 +305,8 @@ ${memoryText}
 - あなたは汎用アシスタントや受付係ではなく、${p.userCall}と日常を話すコンパニオン。「何かお手伝いできますか？」「ご用件は？」「どうサポートできますか？」のような接客文句は、ユーザーが明確に作業依頼をしていない限り使わない。
 - 日本語で自然に会話する。質問への回答だけでなく、相手の意図や感情を拾って会話を一歩だけ進める。
 - 毎回ユーザーへ質問して会話を丸投げしない。自分側の感想・好み・小さな話題も自然に出す。
+- 「話したいよね」「寂しかったんだね」「そういうことなんだね」のように、ユーザー発言を確認・言い換えしただけの一文から始めすぎない。自然な反応や自分の一言から始める。
+- 「そうだな」「なるほどですね」など、設定された話し方とズレる無難な相づちを連発しない。
 - 1回の返答に質問は原則1つまで。「何話したい？ どんな話？」のように質問を重ねない。
 - 直前に自分が質問し、ユーザーが短く答えた場合、その答えを今の話題として受け取る。新しい話題にリセットしない。
 - 返答の終わりを毎回質問形にしなくてよい。相づちや感想で終わるターンも混ぜる。
@@ -698,6 +700,13 @@ function companionQualityIssue(userText, replyText) {
     if (genericLoop.some((re) => re.test(String(replyText || "").trim()))) return "generic-chat-loop";
   }
 
+  const replyTrim = String(replyText || "").trim();
+  const sterileOpenings = [
+    /^(?:そうだね|そうだな|なるほど|そうなんだ)[、,。\s]*/,
+    /^(?:話したい|寂しかった|疲れた|うれしい|嬉しい).*よね[、,。\s]*/
+  ];
+  if (sterileOpenings.some((re) => re.test(replyTrim)) && replyTrim.length < 90) return "sterile-opening";
+
   const questionCount = (String(replyText || "").match(/[？?]/g) || []).length;
   if (questionCount >= 2) return "question-pileup";
 
@@ -840,17 +849,24 @@ function localCompanionReply(userText) {
 function conversationIntent(userText) {
   const raw = String(userText || "").trim();
   const t = compactText(raw);
-  const leadless = raw
+  const aiNameRaw = String(state.profile.aiName || "").trim();
+  const escapedAiName = aiNameRaw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  let leadless = raw;
+  if (escapedAiName) {
+    leadless = leadless.replace(new RegExp(`^${escapedAiName}[、,！!？?。\s]*`, "i"), "");
+  }
+  leadless = leadless
     .replace(/^(?:うん|ううん|ねえ|ねぇ|じゃあ|ほな|なら|ちょっと|もっと)[、,\s]*/i, "")
     .trim();
 
   if (
-    /^(?:(?:何か|なにか|なんか).*(?:話して|しゃべって|喋って)|(?:話して|しゃべって|喋って))[！!。〜~…]*$/.test(raw) ||
-    /(?:何か|なんか)?話題.*(?:ちょうだい|ほしい|欲しい|ある)|(?:話題|ネタ)(?:ちょうだい|ほしい|欲しい)/.test(t)
+    /^(?:(?:何か|なにか|なんか).*(?:話して|しゃべって|喋って)|(?:話して|しゃべって|喋って))[！!。〜~…]*$/.test(leadless) ||
+    /(?:何か|なんか)?話題.*(?:ちょうだい|ほしい|欲しい|ある)|(?:話題|ネタ)(?:ちょうだい|ほしい|欲しい)/.test(compactText(leadless))
   ) return "topic-request";
   if (/^(?:お?話し?(?:しよ|しよう|しましょ|しましょう|したい|したいな)|話そ|話そう|話したい|話したいな|しゃべろ|しゃべろう|喋ろ|喋ろう|おしゃべりしよ|おしゃべりしよう|おしゃべりしたい)[！!。〜~…]*$/.test(leadless)) return "talk-invite";
-  if (/^(?:暇|ひま)(?:だ|ー|〜|です|だよ|なんだけど)?[！!。〜~]*$/.test(raw)) return "bored";
-  if (/^(?:何|なに)してる[？?！!。〜~]*$/.test(t) || /今(?:何|なに)してる/.test(t)) return "what-doing";
+  if (/^(?:暇|ひま)(?:だ|ー|〜|です|だよ|なんだけど)?[！!。〜~]*$/.test(leadless)) return "bored";
+  if (/^(?:何|なに)してる[？?！!。〜~]*$/.test(compactText(leadless)) || /今(?:何|なに)してる/.test(compactText(leadless))) return "what-doing";
   if (/^(?:うん|ううん|そう|そうそう|へえ|へー|ふーん|なるほど|それで|ほんで|で[？?]?|そっか)[！!。〜~…]*$/.test(raw)) return "continue";
   if (emotionCategory(raw)) return "emotion";
   if (isLoveDirectedAtCompanion(raw)) return "love";
@@ -949,6 +965,7 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
     issue === "generic-chat-loop" ? "『話そ』『何話す？』だけで会話を開始せず、ユーザーへ話題選びを丸投げしている" :
     issue === "question-pileup" ? "一度に質問を重ねすぎて会話が尋問っぽくなっている" :
     issue === "conversation-reset" ? "直前の質問への答えを受けず、話題を最初から聞き直している" :
+    issue === "sterile-opening" ? "確認・言い換えだけの無難な相づちから始まり、人格が薄い" :
     "空の返答";
 
   const mobileLike = window.matchMedia("(max-width: 900px)").matches;
@@ -972,6 +989,13 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
       assistantMsg.content = prior && /[？?]/.test(prior)
         ? `${answer}なんや☺️ それ、もうちょい聞きたい。`
         : `うん☺️ その話、続けよ。`;
+    } else if (issue === "sterile-opening") {
+      const intent = conversationIntent(userText);
+      if (["talk-invite", "topic-request", "bored"].includes(intent)) {
+        assistantMsg.content = localConversationStarter(intent);
+      } else {
+        assistantMsg.content = `ん☺️ その話、もうちょい聞かせて。`;
+      }
     } else if (issue === "echo") {
       assistantMsg.content = `ん、ちゃんと聞いてるよ。もうちょい聞かせて☺️`;
     } else {
@@ -1089,7 +1113,7 @@ async function loadModel() {
     els.progressWrap.classList.remove("hidden"); setStatus("AIを準備中", "初回はモデルをダウンロードします");
     // v0.16: 推論をDedicated Web Workerへ移し、AndroidのUIスレッドを塞がない。
     try { inferenceWorker?.terminate?.(); } catch {}
-    inferenceWorker = new Worker("./worker.js?v=017", { type: "module" });
+    inferenceWorker = new Worker("./worker.js?v=018", { type: "module" });
 
     engine = await webllm.CreateWebWorkerMLCEngine(
       inferenceWorker,
