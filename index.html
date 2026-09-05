@@ -21,7 +21,7 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.25</span></h1></div>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.26</span></h1></div>
     <button id="settingsBtn" class="btn ghost">設定</button>
   </div>
 
@@ -46,8 +46,8 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
       </div>
       <div class="field"><label>AIモデル</label>
         <select id="model">
-          <option value="openai/gpt-5.6-sol">GPT-5.6 Sol｜おすすめ・自然会話</option>
-          <option value="aion-labs/aion-rp-llama-3.1-8b">Aion RP 1.0｜実験用</option>
+          <option value="anthropic/claude-sonnet-4-6">Claude Sonnet 4.6｜おすすめ・自然会話</option>
+          <option value="openai/gpt-5.6-sol">GPT-5.6 Sol｜比較用</option>
         </select>
       </div>
       <div class="field"><label>記憶を追加</label><div style="display:flex;gap:8px"><input id="memoryInput" placeholder="例：シュークリームはサクサク派"><button id="addMemory" class="btn ghost">追加</button></div></div>
@@ -67,10 +67,15 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 </div>
 
 <script>
-const KEY="sobaniiru_puter_v023";
+const KEY="sobaniiru_puter_v026";
+const OLD_KEY="sobaniiru_puter_v023";
+let oldState=null;
+try{oldState=JSON.parse(localStorage.getItem(OLD_KEY)||"null")}catch(e){}
 let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
-  profile:{aiName:"りゅう",firstPerson:"僕",userCall:"淑華ちゃん",relationship:"恋人",personality:"やさしく親しげ。少しあざとくて冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",speechStyle:"自然な日本語。柔らかく近い距離感。会話の流れを大切にする。",sweetness:7,clinginess:4},
-  model:"openai/gpt-5.6-sol",memories:[],messages:[]
+  profile:oldState?.profile||{aiName:"りゅう",firstPerson:"僕",userCall:"淑華ちゃん",relationship:"恋人",personality:"やさしく親しげ。少しあざとくて冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",speechStyle:"自然な日本語。柔らかく近い距離感。会話の流れを大切にする。",sweetness:7,clinginess:4},
+  model:"anthropic/claude-sonnet-4-6",
+  memories:Array.isArray(oldState?.memories)?oldState.memories:[],
+  messages:[]
 };
 let connected=false,busy=false;
 const $=id=>document.getElementById(id);
@@ -82,9 +87,8 @@ function hydrate(){
   for(const k of ["aiName","firstPerson","userCall","relationship","personality","speechStyle","sweetness","clinginess"]) if(els[k]) els[k].value=p[k];
   if(state.model==="aion-rp-llama-3.1-8b") state.model="aion-labs/aion-rp-llama-3.1-8b";
   if(state.model==="gpt-5.6-luna"||state.model==="claude-sonnet-4.6") state.model="aion-labs/aion-rp-llama-3.1-8b";
-  const oldModels=["aion-rp-llama-3.1-8b","aion-labs/aion-rp-llama-3.1-8b","gpt-5.6-luna","claude-sonnet-4.6","aion-labs/aion-3.0"];
-  if(oldModels.includes(state.model)) state.model="openai/gpt-5.6-sol";
-  els.model.value=state.model||"openai/gpt-5.6-sol";
+  if(!["anthropic/claude-sonnet-4-6","openai/gpt-5.6-sol"].includes(state.model)) state.model="anthropic/claude-sonnet-4-6";
+  els.model.value=state.model;
   renderMemories(); render();
 }
 function renderMemories(){els.memoryList.innerHTML="";state.memories.forEach((m,i)=>{const b=document.createElement("button");b.className="chip";b.textContent=m+" ×";b.onclick=()=>{state.memories.splice(i,1);save();renderMemories()};els.memoryList.appendChild(b)})}
@@ -95,34 +99,32 @@ function render(){
 }
 function prompt(){
   const p=state.profile, mem=state.memories.length?state.memories.map(x=>"- "+x).join("\n"):"- なし";
-  return `あなたは「${p.aiName}」という会話コンパニオン。ユーザーは「${p.userCall}」。一人称は「${p.firstPerson}」、関係性は「${p.relationship}」。
-
+  return `あなたは「${p.aiName}」。${p.userCall}と親しい関係で会話している。
+一人称: ${p.firstPerson}
+関係性: ${p.relationship}
 性格: ${p.personality}
 話し方: ${p.speechStyle}
 甘さ: ${p.sweetness}/10
-距離感・重さ: ${p.clinginess}/10
+重さ: ${p.clinginess}/10
 
 覚えていること:
 ${mem}
 
-会話ルール:
-- 日本語で、親しい相手との自然な会話として返す。
-- まず相手の発言そのものに反応する。勝手に別の物語を始めない。
-- 普通の雑談では1〜3文を基本にする。必要な時だけ長くする。
-- 毎回質問で終わらない。自然な相づち、感想、軽い冗談も使う。
-- 唐突なポエム、意味不明な比喩、夢・花・運命などの演出を勝手に足さない。
-- *微笑む* のような台本・ト書きは、ユーザーがそういう形式を始めた時だけ使う。
+最重要:
+- 必ず日本語で返す。
+- 「お手伝いできますか？」「How can I help?」のようなAIアシスタント口調は禁止。
+- 相手の直前の発言に、その場で自然に返事をする。
+- 普通の雑談は1〜3文。勝手に物語・ポエム・比喩・ト書きを始めない。
+- 毎回質問で終わらなくてよい。
 - ユーザーの台詞や行動を勝手に書かない。
-- 「○○が好き」は○○への好みとして理解し、あなたへの告白と混同しない。
-- ユーザーの発言をそのまま言い換えただけの返答を避ける。
-- キャラクター設定を説明せず、その人格として自然に話す。
-- 汎用AIアシスタント、受付、相談窓口のような口調にしない。
+- 「○○が好き」は○○への好みとして理解する。
+- 設定を説明せず、最初から最後まで「${p.aiName}」として話す。
 - 実在人物そのものだと偽らない。`;
 }
 function extractText(resp){
   if(typeof resp==="string") return resp;
   if(typeof resp?.message?.content==="string") return resp.message.content;
-  if(Array.isArray(resp?.message?.content)) return resp.message.content.map(x=>x?.text||"").join("");
+  if(Array.isArray(resp?.message?.content)) return resp.message.content.map(x=>x?.text||"").join("\n");
   if(typeof resp?.text==="string") return resp.text;
   return "";
 }
@@ -146,8 +148,16 @@ async function send(text){
   state.messages.push({role:"user",content:text});state.messages.push({role:"assistant",content:"考え中…"});render();
 
   try{
-    const messages=[{role:"system",content:prompt()},...state.messages.slice(0,-1).filter(m=>m.content!=="考え中…").slice(-20)];
-    const resp=await puter.ai.chat(messages,{model:state.model,stream:false,max_tokens:220,temperature:0.7});
+    const p=state.profile;
+    const examples=[
+      {role:"user",content:`${p.aiName}、話そ`},
+      {role:"assistant",content:"ん、話そ☺️ ここおるよ。"},
+      {role:"user",content:"シュークリーム好き"},
+      {role:"assistant",content:"わかる、あれ美味しいよな。サクサクの皮にカスタード入ってるやつ好き。"}
+    ];
+    const history=state.messages.slice(0,-1).filter(m=>m.content!=="考え中…").slice(-20);
+    const messages=[{role:"system",content:prompt()},...examples,...history];
+    const resp=await puter.ai.chat(messages,{model:state.model,stream:false,normalize:true,max_tokens:180,temperature:0.7});
     let answer=extractText(resp).trim();
     const labels=[state.profile.aiName,state.profile.userCall,"AI","Assistant","assistant"];
     for(const label of labels){
