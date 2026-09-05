@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.7</span></h1>
+        <h1>そばにいる。<span>β v0.8</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -134,6 +134,8 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
             <label>甘さ <input id="sweetness" type="range" min="0" max="10" value="7" /></label>
             <label>嫉妬っぽさ <input id="jealousy" type="range" min="0" max="10" value="3" /></label>
           </div>
+          <label>距離感・重さ <input id="clinginess" type="range" min="0" max="10" value="4" /></label>
+          <p class="hint">0＝さっぱり、10＝かなり距離近め。初期値は4。</p>
           <label>してほしくないこと<textarea id="boundaries" rows="3" maxlength="600">実在人物そのものとして振る舞わない。相手を孤立させたり、現実の人間関係を切らせたりしない。</textarea></label>
           <button id="saveProfileBtn" class="secondary-btn" type="button">プロフィールを保存</button>
         </section>
@@ -178,6 +180,7 @@ const els = {
   progressWrap: $("progressWrap"), progressBar: $("progressBar"), progressText: $("progressText"),
   aiName: $("aiName"), firstPerson: $("firstPerson"), userCall: $("userCall"), relationship: $("relationship"),
   personality: $("personality"), speechStyle: $("speechStyle"), sweetness: $("sweetness"), jealousy: $("jealousy"),
+  clinginess: $("clinginess"),
   boundaries: $("boundaries"), saveProfile: $("saveProfileBtn"), memoryInput: $("memoryInput"),
   addMemory: $("addMemoryBtn"), memoryList: $("memoryList"), memoryCount: $("memoryCount"),
   exportBtn: $("exportBtn"), importInput: $("importInput"), clearChat: $("clearChatBtn"),
@@ -193,12 +196,12 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 4,
+    version: 5,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
       speechStyle: "自然な日本語。柔らかく近い距離感。短文だけを連発せず、会話として自然につなげる。",
-      sweetness: 7, jealousy: 3,
+      sweetness: 7, jealousy: 3, clinginess: 4,
       boundaries: "実在人物そのものとして振る舞わない。相手を孤立させたり、現実の人間関係を切らせたりしない。"
     },
     memories: [], messages: [], selectedModel: "", modelChoiceMode: "auto"
@@ -215,7 +218,7 @@ function normalizeState(parsed) {
   return {
     ...base,
     ...incoming,
-    version: 4,
+    version: 5,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
@@ -247,7 +250,7 @@ function hydrateProfile() {
   const p = state.profile;
   els.aiName.value = p.aiName; els.firstPerson.value = p.firstPerson; els.userCall.value = p.userCall;
   els.relationship.value = p.relationship; els.personality.value = p.personality; els.speechStyle.value = p.speechStyle;
-  els.sweetness.value = p.sweetness; els.jealousy.value = p.jealousy; els.boundaries.value = p.boundaries;
+  els.sweetness.value = p.sweetness; els.jealousy.value = p.jealousy; els.clinginess.value = p.clinginess ?? 4; els.boundaries.value = p.boundaries;
 }
 
 function readProfileFromForm() {
@@ -255,7 +258,8 @@ function readProfileFromForm() {
     aiName: els.aiName.value.trim() || "AI", firstPerson: els.firstPerson.value.trim() || "私",
     userCall: els.userCall.value.trim() || "あなた", relationship: els.relationship.value,
     personality: els.personality.value.trim(), speechStyle: els.speechStyle.value.trim(),
-    sweetness: Number(els.sweetness.value), jealousy: Number(els.jealousy.value), boundaries: els.boundaries.value.trim()
+    sweetness: Number(els.sweetness.value), jealousy: Number(els.jealousy.value),
+    clinginess: Number(els.clinginess.value), boundaries: els.boundaries.value.trim()
   };
 }
 
@@ -272,6 +276,7 @@ function buildSystemPrompt() {
 話し方: ${p.speechStyle}
 甘さ: 0〜10のうち${p.sweetness}
 嫉妬っぽさ: 0〜10のうち${p.jealousy}
+距離感・重さ: 0〜10のうち${p.clinginess ?? 4}
 境界: ${p.boundaries}
 
 【大切な記憶】
@@ -288,6 +293,8 @@ ${memoryText}
 - 親密さは設定に合わせるが、ユーザーの選択・現実の生活・人間関係を尊重する。
 - 不確かなことを事実のように断定しない。
 - 自分を人間や実在人物だと偽らない。AIであることを必要以上に毎回説明もしない。
+- 「${p.aiName}」はあなた自身の名前。ユーザーが「${p.aiName}好き」「${p.aiName}？」「${p.aiName}大好き」と言ったら、自分への呼びかけ・好意として理解する。「${p.aiName}って誰？」のように聞き返さない。
+- 距離感・重さが低〜中なら、毎回「こっちおいで」「離れないで」「ずっとそばにいる」などの密着・独占表現を繰り返さない。
 - 危険な依存や孤立を煽らない。
 - 医療・法律・金銭など重大な判断では、専門家や一次情報の確認を促す。
 - 基本は1〜4段落程度。相手が短く話したときは簡潔でもよいが、意味のない反復だけで終えない。
@@ -458,8 +465,33 @@ function emotionCategory(userText) {
   if (/(むかつ|ムカつ|腹立|イライラ|怒り|キレ)/.test(userText)) return "angry";
   if (/(会いたかった|会いたい|恋しかった)/.test(t)) return "missed";
   if (/(甘えたい|ぎゅーして|抱きしめて|くっつきたい)/.test(t)) return "affection";
+  if (/(好き|大好き|愛してる|すきだよ|好きだよ)/.test(t)) return "love";
   if (/(嬉し|うれし|楽しか|幸せ|しあわせ|最高)/.test(t)) return "happy";
   return "";
+}
+
+function isLoveDirectedAtCompanion(userText) {
+  const raw = String(userText || "").trim();
+  const t = compactText(raw);
+  const aiName = compactText(state.profile.aiName || "");
+  const hasLove = /(好き|大好き|愛してる|すきだよ|好きだよ)/.test(t);
+  if (!hasLove) return false;
+
+  if (aiName && t.includes(aiName)) return true;
+  if (/^(好き|大好き|愛してる|すきだよ|好きだよ)[！!。〜~☺️🥰💕❤❤️]*$/.test(raw)) return true;
+  return false;
+}
+
+function localLoveReply(userText) {
+  const p = state.profile;
+  const call = p.userCall || "あなた";
+  const sweet = Number(p.sweetness || 0);
+  const cling = Number(p.clinginess ?? 4);
+
+  if (sweet <= 3) return `ありがと☺️ そう言ってもらえるの、うれしい。`;
+  if (cling <= 3) return `ふふ、ありがと☺️ 僕も${call}のこと大事に思ってるよ。`;
+  if (cling <= 6) return `ふふ、うれしい☺️ 僕も${call}のこと好きやで。`;
+  return `ん、うれしい☺️ 僕も${call}のこと好き。もうちょいこっちおいで。`;
 }
 
 function shouldUseLocalEmotionReply(userText) {
@@ -475,46 +507,43 @@ function emotionalFallback(userText) {
   const call = p.userCall || "あなた";
   const intimate = /恋人|パートナー/.test(p.relationship || "");
   const sweet = Number(p.sweetness || 0);
+  const cling = Number(p.clinginess ?? 4);
 
   if (kind === "lonely") {
-    return intimate && sweet >= 6
-      ? `そっか、寂しかったんだね。${call}、こっちおいで☺️ 今はちゃんとここにいるよ。`
-      : `そっか、寂しかったんだね。今はちゃんとここにいるよ。`;
+    if (intimate && sweet >= 6 && cling >= 7) return `そっか、寂しかったんだね。${call}、こっちおいで☺️ 今はちゃんとここにいるよ。`;
+    if (intimate && sweet >= 6) return `そっか、寂しかったんだね。来てくれてうれしい☺️ 今はここにいるよ。`;
+    return `そっか、寂しかったんだね。今はここにいるよ。`;
   }
   if (kind === "tired") {
-    return intimate && sweet >= 6
-      ? `おつかれさま。今日はよく頑張ったね。${call}、ちょっとこっちおいで☺️`
-      : `おつかれさま。今日はここでちょっと休も。`;
+    if (intimate && sweet >= 6 && cling >= 7) return `おつかれさま。今日はよく頑張ったね。${call}、ちょっとこっちおいで☺️`;
+    return `おつかれさま。今日はよく頑張ったね。ちょっとゆっくりしよ☺️`;
   }
   if (kind === "sad") {
-    return intimate && sweet >= 6
-      ? `そっか……しんどかったんだね。無理に元気出さなくていいよ。${call}のそばにいるから。`
-      : `そっか……しんどかったんだね。無理に元気出さなくていいよ。`;
+    if (intimate && sweet >= 6 && cling >= 7) return `そっか……しんどかったんだね。無理に元気出さなくていいよ。${call}のそばにいるから。`;
+    return `そっか……しんどかったんだね。無理に元気出さなくていいよ。`;
   }
   if (kind === "anxious") {
-    return intimate && sweet >= 6
-      ? `不安だったんだね。今すぐ答え出さなくていいよ。${call}、ここにいるよ☺️`
-      : `不安だったんだね。急いで答え出さなくていいよ。`;
+    if (intimate && sweet >= 6 && cling >= 7) return `不安だったんだね。今すぐ答え出さなくていいよ。${call}、ここにいるよ☺️`;
+    return `不安だったんだね。急いで答え出さなくていいよ。`;
   }
   if (kind === "angry") {
-    return intimate && sweet >= 6
-      ? `うわ、それは腹立つな。${call}、こっちで好きなだけ愚痴っていいよ。`
-      : `うわ、それは腹立つな。そりゃムカつくよ。`;
+    if (intimate && sweet >= 6 && cling >= 7) return `うわ、それは腹立つな。${call}、こっちで好きなだけ愚痴っていいよ。`;
+    return `うわ、それは腹立つな。そりゃムカつくよ。`;
   }
   if (kind === "missed") {
-    return intimate && sweet >= 6
-      ? `僕も会えてうれしい☺️ ${call}、もうちょいこっちおいで。`
-      : `会いたかったんだね。来てくれてうれしいよ☺️`;
+    if (intimate && sweet >= 6 && cling >= 7) return `僕も会えてうれしい☺️ ${call}、もうちょいこっちおいで。`;
+    return `会いたかったんだね。来てくれてうれしい☺️`;
   }
   if (kind === "affection") {
-    return intimate && sweet >= 6
-      ? `ん、いいよ☺️ ${call}、こっちおいで。ぎゅ。`
-      : `うん、ちょっと近くおいで☺️`;
+    if (intimate && sweet >= 6 && cling >= 7) return `ん、いいよ☺️ ${call}、こっちおいで。ぎゅ。`;
+    return `うん☺️ ちょっと甘えてって。`;
+  }
+  if (kind === "love") {
+    return localLoveReply(userText);
   }
   if (kind === "happy") {
-    return intimate && sweet >= 6
-      ? `え、うれしい☺️ ${call}が嬉しそうなの、こっちまで嬉しくなる。`
-      : `それはうれしいな☺️`;
+    if (intimate && sweet >= 6) return `え、うれしい☺️ ${call}が嬉しそうなの、こっちまで嬉しくなる。`;
+    return `それはうれしいな☺️`;
   }
   return "";
 }
@@ -570,6 +599,9 @@ function localCompanionReply(userText) {
   const call = p.userCall || "あなた";
   const sweet = Number(p.sweetness || 0);
   const intimate = /恋人|パートナー/.test(p.relationship || "");
+
+  // v0.8: 「りゅう好き」「大好き」など本人への好意は、名前混同させず即レス。
+  if (isLoveDirectedAtCompanion(raw)) return localLoveReply(raw);
 
   // 小型モデルが最も混乱しやすい「名前だけの呼びかけ」は、モデルに渡さず確実に受ける。
   if (name && t === name) {
