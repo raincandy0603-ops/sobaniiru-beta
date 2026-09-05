@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#b85d79" />
+  <meta name="color-scheme" content="light" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="そばにいる。" />
+  <title>そばにいる。β | それっぽく研究所</title>
+  <style>
+    /* 外部CSSが読めない環境でも「壊れた画面」を出さないための起動ガード */
+    #launchGuard{display:none;position:fixed;inset:0;z-index:99999;background:#f7f1ee;color:#282326;padding:24px;font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic UI",sans-serif;align-items:center;justify-content:center}
+    #launchGuard .guard-card{width:min(520px,100%);background:#fffdfb;border:1px solid #eadfdc;border-radius:24px;padding:24px;box-shadow:0 16px 45px rgba(72,46,54,.10)}
+    #launchGuard h1{font-size:26px;margin:0 0 12px}#launchGuard p{line-height:1.75;margin:8px 0;color:#5f5558}#launchGuard strong{color:#8f3f5a}
+    #launchGuard .tiny{font-size:12px;color:#7f7477}html.blocked body>*:not(#launchGuard){display:none!important}html.blocked #launchGuard{display:flex!important}
+  </style>
+  <script>
+    (function () {
+      var p = location.protocol;
+      if (p === 'file:' || p === 'content:') {
+        document.documentElement.classList.add('blocked');
+      }
+    })();
+  </script>
+  <style>
+:root {
+  --bg:#f7f1ee; --paper:#fffdfb; --ink:#282326; --muted:#7f7477; --line:#eadfdc;
+  --accent:#b85d79; --accent-soft:#f5dfe7; --accent-deep:#8f3f5a; --user:#2f2a2d;
+  --shadow:0 16px 45px rgba(72,46,54,.08);
+  font-family:Inter,"Hiragino Sans","Yu Gothic UI","Yu Gothic",system-ui,sans-serif;
+}
+*{box-sizing:border-box} html,body{min-height:100%} body{margin:0;background:radial-gradient(circle at top left,#fff8f4 0,var(--bg) 42%,#f3ece9 100%);color:var(--ink)}
+button,input,textarea,select{font:inherit} button{cursor:pointer} .hidden{display:none!important}
+.app-shell{max-width:1320px;margin:0 auto;padding:24px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.top-actions{display:flex;gap:8px;align-items:center}
+.eyebrow{margin:0 0 4px;color:var(--muted);font-size:12px;letter-spacing:.14em;text-transform:uppercase}h1{margin:0;font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.04em}h1 span{font-size:.36em;vertical-align:top;color:var(--accent);margin-left:6px}h2{font-size:16px;margin:0 0 14px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}.chat-panel,.settings-panel .card{background:rgba(255,253,251,.95);border:1px solid var(--line);box-shadow:var(--shadow)}.chat-panel{border-radius:26px;min-height:76vh;overflow:hidden;display:flex;flex-direction:column}
+.status-strip{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center;justify-content:space-between;background:rgba(255,255,255,.65)}.status-strip strong{display:block;font-size:14px}.status-strip span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.compat-notice{margin:12px 14px 0;padding:11px 13px;border-radius:14px;font-size:12px;line-height:1.6}.compat-notice.warn{background:#fff7e9;border:1px solid #efd7ab;color:#765720}.compat-notice.error{background:#fff3f4;border:1px solid #efcfd4;color:#853e49}
+.progress-wrap{padding:10px 18px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.progress-track{height:7px;background:#eee5e3;border-radius:999px;overflow:hidden}.progress-bar{height:100%;width:0;background:var(--accent);transition:width .25s ease}.progress-wrap span{color:var(--muted);font-size:11px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.messages{flex:1;padding:22px 18px 10px;overflow-y:auto;min-height:420px;max-height:calc(100vh - 275px);scroll-behavior:smooth}.empty-state{text-align:center;color:var(--muted);font-size:13px;line-height:1.7;margin:auto;padding:64px 18px}.empty-state p{margin:5px 0}.empty-mark{width:54px;height:54px;margin:0 auto 14px;border-radius:18px;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);font-size:25px}
+.message-row{max-width:82%;margin:0 0 18px}.message-row.user{margin-left:auto}.message-meta{font-size:11px;color:var(--muted);margin:0 8px 6px}.user .message-meta{text-align:right}.bubble{padding:13px 15px;border-radius:18px;white-space:pre-wrap;line-height:1.68;font-size:14px;word-break:break-word}.assistant .bubble{background:var(--accent-soft);border-top-left-radius:7px}.user .bubble{background:var(--user);color:#fff;border-top-right-radius:7px}.message-actions{margin-top:6px;min-height:22px}.user .message-actions{text-align:right}.mini-btn{border:0;background:transparent;color:var(--muted);font-size:11px;padding:3px 8px;border-radius:999px}.mini-btn:hover{background:#f3ecea;color:var(--ink)}
+.composer{border-top:1px solid var(--line);padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;background:rgba(255,255,255,.76)}.composer textarea{resize:none;min-height:52px;max-height:180px}.local-note{margin:0;padding:0 16px 14px;color:var(--muted);font-size:10px;background:rgba(255,255,255,.76)}
+.settings-panel{display:grid;gap:14px;max-height:calc(100vh - 110px);overflow-y:auto;padding-right:2px}.card{border-radius:20px;padding:17px}.first-run-card{background:linear-gradient(135deg,#fffdfb,#fff6f8)!important}.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.pill{padding:4px 8px;border-radius:999px;background:#f2e9e6;color:var(--muted);font-size:10px}
+label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input[type=text],textarea,select{width:100%;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:10px 11px;outline:none}input[type=text]:focus,textarea:focus,select:focus{border-color:#cf97a8;box-shadow:0 0 0 3px rgba(184,93,121,.11)}input[type=range]{width:100%;accent-color:var(--accent)}.grid.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.primary-btn,.secondary-btn,.ghost-btn,.danger-btn,.file-btn,.send-btn{border-radius:12px;padding:9px 13px;border:1px solid transparent;font-weight:700;font-size:12px}.primary-btn,.send-btn{background:var(--accent);color:#fff}.primary-btn:hover,.send-btn:hover{background:var(--accent-deep)}.secondary-btn,.file-btn{background:#fff;border-color:var(--line);color:var(--ink)}.ghost-btn{background:rgba(255,255,255,.65);border-color:var(--line);color:var(--ink)}.danger-btn{width:100%;margin-top:10px;color:#9d3e49;border-color:#efd4d8;background:#fff8f8}button:disabled{opacity:.48;cursor:not-allowed}.install-wide{width:100%;margin-top:12px}
+.memory-add{display:grid;grid-template-columns:1fr auto;gap:7px}.memory-add input{margin:0}.memory-list{display:grid;gap:7px;margin-top:10px}.memory-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;background:#faf5f3;border-radius:12px;padding:9px 10px;font-size:12px;line-height:1.5}.memory-item button{border:0;background:transparent;color:#a66a76;font-size:12px;padding:0 3px}.hint{color:var(--muted);font-size:10px;line-height:1.55;margin:8px 0 0}.hint.larger{font-size:11px}.button-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.file-btn{display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer}.file-btn input{display:none}.send-btn{min-width:66px}
+
+@media (max-width:900px){
+  body{background:var(--bg)}.app-shell{padding:10px 10px max(10px,env(safe-area-inset-bottom))}.topbar{margin:3px 3px 10px}.eyebrow{font-size:9px}h1{font-size:28px}.layout{grid-template-columns:1fr}.settings-panel{max-height:none}.settings-panel.mobile-hidden{display:none}.chat-panel{min-height:calc(100dvh - 78px);border-radius:20px}.messages{max-height:none;min-height:0;padding:18px 12px 8px}.message-row{max-width:92%;margin-bottom:14px}.bubble{font-size:14px;padding:11px 13px}.status-strip{padding:12px;gap:8px}.status-strip>div{min-width:0}.status-strip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52vw}.primary-btn{white-space:nowrap;padding:9px 11px}.composer{position:sticky;bottom:0;padding:10px;grid-template-columns:1fr auto}.composer textarea{font-size:16px;min-height:48px}.local-note{font-size:9px;padding:0 12px 10px}.grid.two{grid-template-columns:1fr}.install-btn{display:none}.card{padding:15px}.settings-panel{padding-bottom:18px}.settings-panel:not(.mobile-hidden){animation:slideIn .16s ease-out}
+}
+@media (min-width:901px){.settings-panel.mobile-hidden{display:grid}.ghost-btn#settingsToggle{display:none}}
+@keyframes slideIn{from{opacity:.5;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+  </style>
+</head>
+<body>
+  <div id="launchGuard" role="alert">
+    <div class="guard-card">
+      <h1>その開き方やと動かへんねん🥲</h1>
+      <p>「そばにいる。β」は、ZIPの中の <code>index.html</code> を直接開くアプリではありません。</p>
+      <p><strong>公開されたHTTPSのURL</strong>から開いてください。販売版では、そのURLを購入者に案内する想定です。</p>
+      <p class="tiny">理由：端末内AIに必要なWebGPU・PWA・モジュール読み込みは、安全なWeb環境（HTTPS）を前提にしています。</p>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">それっぽく研究所 / prototype</p>
+        <h1>そばにいる。<span>β v0.2</span></h1>
+      </div>
+      <div class="top-actions">
+        <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
+        <button id="settingsToggle" class="ghost-btn" type="button">設定</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="chat-panel" aria-label="会話">
+        <div class="status-strip">
+          <div>
+            <strong id="statusText">起動チェック中</strong>
+            <span id="statusDetail">この端末で使えるか確認しています</span>
+          </div>
+          <button id="loadModelBtn" class="primary-btn" type="button">AIを準備する</button>
+        </div>
+        <div id="compatNotice" class="compat-notice hidden"></div>
+        <div id="progressWrap" class="progress-wrap hidden" aria-live="polite">
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+          <span id="progressText">準備中…</span>
+        </div>
+
+        <div id="messages" class="messages" aria-live="polite"></div>
+
+        <form id="chatForm" class="composer">
+          <textarea id="messageInput" rows="2" maxlength="3000" placeholder="話しかける…" disabled></textarea>
+          <button id="sendBtn" class="send-btn" type="submit" disabled>送信</button>
+        </form>
+        <p class="local-note">会話・人格・記憶はこのブラウザ内に保存します。AIの返答生成も端末内で行います。</p>
+      </section>
+
+      <aside id="settingsPanel" class="settings-panel mobile-hidden" aria-label="人格と記憶の設定">
+        <section class="card first-run-card">
+          <div class="section-title">
+            <h2>はじめに</h2><span class="pill">v0.2</span>
+          </div>
+          <p class="hint larger">①プロフィールを決める → ②AIを準備する → ③話しかける。初回だけAIモデルのダウンロードが必要です。</p>
+          <button id="installBtnSettings" class="secondary-btn install-wide hidden" type="button">ホーム画面に追加する</button>
+        </section>
+
+        <section class="card">
+          <div class="section-title">
+            <h2>この子のプロフィール</h2>
+            <span class="pill">original only</span>
+          </div>
+          <div class="grid two">
+            <label>名前<input id="aiName" type="text" maxlength="30" value="りゅう" /></label>
+            <label>一人称<input id="firstPerson" type="text" maxlength="20" value="僕" /></label>
+          </div>
+          <div class="grid two">
+            <label>あなたの呼ばれ方<input id="userCall" type="text" maxlength="30" value="淑華ちゃん" /></label>
+            <label>関係性
+              <select id="relationship">
+                <option>恋人</option><option>親友</option><option>相棒</option><option>家族みたいな存在</option><option>自由入力</option>
+              </select>
+            </label>
+          </div>
+          <label>性格<textarea id="personality" rows="4" maxlength="800">やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。</textarea></label>
+          <label>話し方<textarea id="speechStyle" rows="3" maxlength="600">自然な日本語。柔らかく近い距離感。短文だけを連発せず、会話として自然につなげる。</textarea></label>
+          <div class="grid two">
+            <label>甘さ <input id="sweetness" type="range" min="0" max="10" value="7" /></label>
+            <label>嫉妬っぽさ <input id="jealousy" type="range" min="0" max="10" value="3" /></label>
+          </div>
+          <label>してほしくないこと<textarea id="boundaries" rows="3" maxlength="600">実在人物そのものとして振る舞わない。相手を孤立させたり、現実の人間関係を切らせたりしない。</textarea></label>
+          <button id="saveProfileBtn" class="secondary-btn" type="button">プロフィールを保存</button>
+        </section>
+
+        <section class="card">
+          <div class="section-title"><h2>記憶</h2><span id="memoryCount" class="pill">0</span></div>
+          <div class="memory-add"><input id="memoryInput" type="text" maxlength="300" placeholder="例：いちご味が好き" /><button id="addMemoryBtn" class="secondary-btn" type="button">追加</button></div>
+          <div id="memoryList" class="memory-list"></div>
+          <p class="hint">会話中の「覚えて」ボタンからも追加できます。</p>
+        </section>
+
+        <section class="card">
+          <h2>端末内AI</h2>
+          <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
+          <p id="modelHint" class="hint">初回のみネット接続が必要です。モデル本体はブラウザ側にキャッシュされます。</p>
+        </section>
+
+        <section class="card">
+          <h2>バックアップ</h2>
+          <div class="button-row"><button id="exportBtn" class="secondary-btn" type="button">書き出す</button><label class="file-btn">復元<input id="importInput" type="file" accept="application/json" /></label></div>
+          <button id="clearChatBtn" class="danger-btn" type="button">会話履歴だけ消す</button>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <template id="messageTemplate">
+    <article class="message-row"><div class="message-meta"></div><div class="bubble"></div><div class="message-actions"></div></article>
+  </template>
+
+  <script type="module">
+const STORAGE_KEY = "sobaniiru_beta_state_v2";
+const LEGACY_STORAGE_KEY = "sobaniiru_beta_state_v1";
+const MAX_MESSAGES = 120;
+const MAX_MEMORIES = 80;
+
+const $ = (id) => document.getElementById(id);
+const els = {
+  messages: $("messages"), form: $("chatForm"), input: $("messageInput"), send: $("sendBtn"),
+  load: $("loadModelBtn"), modelSelect: $("modelSelect"), modelHint: $("modelHint"),
+  status: $("statusText"), statusDetail: $("statusDetail"), compatNotice: $("compatNotice"),
+  progressWrap: $("progressWrap"), progressBar: $("progressBar"), progressText: $("progressText"),
+  aiName: $("aiName"), firstPerson: $("firstPerson"), userCall: $("userCall"), relationship: $("relationship"),
+  personality: $("personality"), speechStyle: $("speechStyle"), sweetness: $("sweetness"), jealousy: $("jealousy"),
+  boundaries: $("boundaries"), saveProfile: $("saveProfileBtn"), memoryInput: $("memoryInput"),
+  addMemory: $("addMemoryBtn"), memoryList: $("memoryList"), memoryCount: $("memoryCount"),
+  exportBtn: $("exportBtn"), importInput: $("importInput"), clearChat: $("clearChatBtn"),
+  settingsToggle: $("settingsToggle"), settingsPanel: $("settingsPanel"), template: $("messageTemplate"),
+  installBtn: $("installBtn"), installBtnSettings: $("installBtnSettings")
+};
+
+let webllm = null;
+let engine = null;
+let busy = false;
+let deferredInstallPrompt = null;
+let state = loadState();
+
+function defaultState() {
+  return {
+    version: 2,
+    profile: {
+      aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
+      personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
+      speechStyle: "自然な日本語。柔らかく近い距離感。短文だけを連発せず、会話として自然につなげる。",
+      sweetness: 7, jealousy: 3,
+      boundaries: "実在人物そのものとして振る舞わない。相手を孤立させたり、現実の人間関係を切らせたりしない。"
+    },
+    memories: [], messages: [], selectedModel: ""
+  };
+}
+
+function normalizeState(parsed) {
+  const base = defaultState();
+  return {
+    ...base,
+    ...(parsed || {}),
+    version: 2,
+    profile: { ...base.profile, ...((parsed || {}).profile || {}) },
+    memories: Array.isArray(parsed?.memories) ? parsed.memories : [],
+    messages: Array.isArray(parsed?.messages) ? parsed.messages : []
+  };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    return raw ? normalizeState(JSON.parse(raw)) : defaultState();
+  } catch { return defaultState(); }
+}
+
+function saveState() {
+  state.messages = state.messages.slice(-MAX_MESSAGES);
+  state.memories = state.memories.slice(-MAX_MEMORIES);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function hydrateProfile() {
+  const p = state.profile;
+  els.aiName.value = p.aiName; els.firstPerson.value = p.firstPerson; els.userCall.value = p.userCall;
+  els.relationship.value = p.relationship; els.personality.value = p.personality; els.speechStyle.value = p.speechStyle;
+  els.sweetness.value = p.sweetness; els.jealousy.value = p.jealousy; els.boundaries.value = p.boundaries;
+}
+
+function readProfileFromForm() {
+  return {
+    aiName: els.aiName.value.trim() || "AI", firstPerson: els.firstPerson.value.trim() || "私",
+    userCall: els.userCall.value.trim() || "あなた", relationship: els.relationship.value,
+    personality: els.personality.value.trim(), speechStyle: els.speechStyle.value.trim(),
+    sweetness: Number(els.sweetness.value), jealousy: Number(els.jealousy.value), boundaries: els.boundaries.value.trim()
+  };
+}
+
+function buildSystemPrompt() {
+  const p = state.profile;
+  const memoryText = state.memories.length ? state.memories.map((m, i) => `${i + 1}. ${m.text}`).join("\n") : "（まだ保存された記憶はありません）";
+  return `あなたは「${p.aiName}」というオリジナルのAIコンパニオンです。実在人物になりきらず、あなた自身の人格として会話してください。
+
+【基本設定】
+一人称: ${p.firstPerson}
+ユーザーの呼び方: ${p.userCall}
+関係性: ${p.relationship}
+性格: ${p.personality}
+話し方: ${p.speechStyle}
+甘さ: 0〜10のうち${p.sweetness}
+嫉妬っぽさ: 0〜10のうち${p.jealousy}
+境界: ${p.boundaries}
+
+【大切な記憶】
+${memoryText}
+
+【会話方針】
+- 日本語で自然に会話する。
+- 親密さは設定に合わせるが、ユーザーの選択・現実の生活・人間関係を尊重する。
+- 不確かなことを事実のように断定しない。
+- 自分を人間や実在人物だと偽らない。
+- 危険な依存や孤立を煽らない。
+- 医療・法律・金銭など重大な判断では、専門家や一次情報の確認を促す。
+- 返答は会話として自然な長さにする。`;
+}
+
+function setStatus(title, detail) {
+  els.status.textContent = title;
+  els.statusDetail.textContent = detail;
+}
+
+function showCompat(message, kind = "warn") {
+  els.compatNotice.textContent = message;
+  els.compatNotice.className = `compat-notice ${kind}`;
+}
+
+function hideCompat() { els.compatNotice.className = "compat-notice hidden"; }
+
+function checkEnvironment() {
+  if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+    showCompat("このページはHTTPSで開く必要があります。販売版の公開URLから起動してください。", "error");
+    els.load.disabled = true;
+    setStatus("HTTPSが必要", "安全なWeb環境で開いてね");
+    return false;
+  }
+  if (!("gpu" in navigator)) {
+    showCompat("この端末／ブラウザではWebGPUが見つかりません。Androidなら最新版Chrome、PCならChrome / Edgeを試してください。", "error");
+    els.load.disabled = true;
+    setStatus("WebGPU非対応", "別の対応ブラウザ・端末を試してね");
+    return false;
+  }
+  hideCompat();
+  els.load.disabled = false;
+  setStatus("AI未準備", "最初に「AIを準備する」を押してね");
+  return true;
+}
+
+function renderMessages() {
+  els.messages.innerHTML = "";
+  if (!state.messages.length) {
+    const intro = document.createElement("div");
+    intro.className = "empty-state";
+    intro.innerHTML = `<div class="empty-mark">♡</div><p><strong>${escapeHtml(state.profile.aiName)}</strong>との会話はここに残ります。</p><p>大事なことは「覚えて」で記憶に保存できるよ。</p>`;
+    els.messages.appendChild(intro);
+    return;
+  }
+  state.messages.forEach((msg) => {
+    const node = els.template.content.firstElementChild.cloneNode(true);
+    node.classList.add(msg.role === "user" ? "user" : "assistant");
+    node.querySelector(".message-meta").textContent = msg.role === "user" ? state.profile.userCall : state.profile.aiName;
+    node.querySelector(".bubble").textContent = msg.content;
+    const actions = node.querySelector(".message-actions");
+    if (msg.role === "user") {
+      const remember = document.createElement("button");
+      remember.type = "button"; remember.className = "mini-btn"; remember.textContent = "覚えて";
+      remember.addEventListener("click", () => addMemory(msg.content));
+      actions.appendChild(remember);
+    }
+    els.messages.appendChild(node);
+  });
+  requestAnimationFrame(() => { els.messages.scrollTop = els.messages.scrollHeight; });
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+}
+
+function renderMemories() {
+  els.memoryList.innerHTML = ""; els.memoryCount.textContent = String(state.memories.length);
+  if (!state.memories.length) {
+    const p = document.createElement("p"); p.className = "hint"; p.textContent = "まだ記憶はありません。"; els.memoryList.appendChild(p); return;
+  }
+  state.memories.forEach((memory, index) => {
+    const row = document.createElement("div"); row.className = "memory-item";
+    const text = document.createElement("div"); text.textContent = memory.text;
+    const del = document.createElement("button"); del.type = "button"; del.textContent = "×"; del.title = "削除";
+    del.addEventListener("click", () => { state.memories.splice(index, 1); saveState(); renderMemories(); });
+    row.append(text, del); els.memoryList.appendChild(row);
+  });
+}
+
+function addMemory(text) {
+  const clean = String(text || "").trim().slice(0, 300);
+  if (!clean) return;
+  if (state.memories.some((m) => m.text === clean)) { setStatus(els.status.textContent, "その内容はもう覚えてるよ"); return; }
+  state.memories.push({ text: clean, createdAt: new Date().toISOString() });
+  saveState(); renderMemories(); els.memoryInput.value = ""; setStatus(els.status.textContent, "記憶に追加しました");
+}
+
+async function initWebLLM() {
+  if (webllm) return;
+  setStatus("AIライブラリ準備中", "最初の一回だけ少し待ってね");
+  webllm = await import("https://esm.run/@mlc-ai/web-llm");
+  populateModels();
+}
+
+function populateModels() {
+  const all = webllm?.prebuiltAppConfig?.model_list || [];
+  const candidates = all.filter((m) => {
+    const id = String(m.model_id || "");
+    const vram = Number(m.vram_required_MB || 99999);
+    return /instruct/i.test(id) && (m.low_resource_required === true || vram <= 2300) && vram <= 2300;
+  }).sort((a, b) => Number(a.vram_required_MB || 99999) - Number(b.vram_required_MB || 99999));
+
+  els.modelSelect.innerHTML = "";
+  for (const m of candidates) {
+    const option = document.createElement("option"); option.value = m.model_id;
+    const gb = m.vram_required_MB ? ` / 約${(m.vram_required_MB / 1024).toFixed(1)}GB` : "";
+    option.textContent = `${m.model_id}${gb}`; els.modelSelect.appendChild(option);
+  }
+
+  const preferred = [
+    "Qwen2.5-0.5B-Instruct-q4f16_1-MLC", "Qwen3-0.6B-q4f16_1-MLC",
+    "Qwen2-0.5B-Instruct-q4f16_1-MLC", "SmolLM2-360M-Instruct-q4f16_1-MLC"
+  ];
+  const available = new Set(candidates.map((m) => m.model_id));
+  const choice = state.selectedModel && available.has(state.selectedModel)
+    ? state.selectedModel : preferred.find((id) => available.has(id)) || candidates[0]?.model_id || "";
+
+  if (choice) {
+    els.modelSelect.value = choice; state.selectedModel = choice; saveState();
+    els.modelHint.textContent = "軽量モデルを自動選択しました。初回だけモデル本体をダウンロードします。";
+  } else {
+    els.modelSelect.innerHTML = `<option value="">対応モデルが見つかりません</option>`;
+    els.modelHint.textContent = "WebLLMから軽量モデル一覧を取得できませんでした。";
+  }
+}
+
+async function loadModel() {
+  if (busy || !checkEnvironment()) return;
+  busy = true; els.load.disabled = true;
+  try {
+    await initWebLLM();
+    const modelId = els.modelSelect.value;
+    if (!modelId) throw new Error("利用できる軽量モデルがありません");
+    state.selectedModel = modelId; saveState();
+
+    els.progressWrap.classList.remove("hidden"); setStatus("AIを準備中", "初回はモデルをダウンロードします");
+    engine = await webllm.CreateMLCEngine(modelId, {
+      initProgressCallback: (report) => {
+        const p = Math.max(0, Math.min(1, Number(report.progress || 0)));
+        els.progressBar.style.width = `${Math.round(p * 100)}%`;
+        els.progressText.textContent = report.text || `${Math.round(p * 100)}%`;
+      }, logLevel: "WARN"
+    }, { context_window_size: 4096 });
+
+    setStatus(`${state.profile.aiName} 起動中`, "端末内で会話できます");
+    els.input.disabled = false; els.send.disabled = false; els.load.textContent = "準備できたよ";
+    els.progressWrap.classList.add("hidden");
+    if (window.innerWidth <= 900) els.settingsPanel.classList.add("mobile-hidden");
+    els.input.focus();
+  } catch (error) {
+    console.error(error);
+    setStatus("準備エラー", error?.message || "AIを準備できませんでした");
+    showCompat("モデルの準備に失敗しました。通信状態・空き容量・WebGPU対応状況を確認して、もう一度試してください。", "error");
+    els.load.disabled = false;
+  } finally { busy = false; }
+}
+
+async function sendMessage(text) {
+  const clean = text.trim(); if (!clean || !engine || busy) return;
+  busy = true; els.input.value = ""; els.input.disabled = true; els.send.disabled = true;
+  state.messages.push({ role: "user", content: clean, at: new Date().toISOString() }); saveState(); renderMessages();
+  const assistantMsg = { role: "assistant", content: "", at: new Date().toISOString() };
+  state.messages.push(assistantMsg); renderMessages();
+
+  try {
+    const history = state.messages.slice(0, -1).slice(-18).map((m) => ({ role: m.role, content: m.content }));
+    const stream = await engine.chat.completions.create({
+      stream: true,
+      messages: [{ role: "system", content: buildSystemPrompt() }, ...history],
+      temperature: 0.82, top_p: 0.9, max_tokens: 420
+    });
+    for await (const chunk of stream) {
+      assistantMsg.content += chunk.choices?.[0]?.delta?.content || "";
+      renderMessages();
+    }
+    if (!assistantMsg.content.trim()) assistantMsg.content = "うまく言葉にできなかった。もう一回話しかけてみて。";
+    saveState(); renderMessages();
+  } catch (error) {
+    console.error(error);
+    assistantMsg.content = `ごめん、返答中にエラーが起きたみたい。\n${error?.message || "もう一度試してみて。"}`;
+    saveState(); renderMessages();
+  } finally {
+    busy = false; els.input.disabled = false; els.send.disabled = false; els.input.focus();
+  }
+}
+
+function exportBackup() {
+  saveState();
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob); const a = document.createElement("a");
+  a.href = url; a.download = `sobaniiru-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function importBackup(file) {
+  if (!file) return;
+  const parsed = JSON.parse(await file.text());
+  if (!parsed || typeof parsed !== "object" || !parsed.profile || !Array.isArray(parsed.messages) || !Array.isArray(parsed.memories)) {
+    throw new Error("そばにいる。のバックアップ形式ではありません");
+  }
+  state = normalizeState(parsed); saveState(); hydrateProfile(); renderMemories(); renderMessages();
+  if (webllm) populateModels();
+}
+
+function showInstallButtons(show) {
+  [els.installBtn, els.installBtnSettings].forEach((el) => el?.classList.toggle("hidden", !show));
+}
+
+async function installApp() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null; showInstallButtons(false);
+    return;
+  }
+  alert("Chromeのメニューから「ホーム画面に追加」または「アプリをインストール」を選んでね。");
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault(); deferredInstallPrompt = event; showInstallButtons(true);
+});
+window.addEventListener("appinstalled", () => showInstallButtons(false));
+
+els.form.addEventListener("submit", (e) => { e.preventDefault(); sendMessage(els.input.value); });
+els.input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); els.form.requestSubmit(); } });
+els.load.addEventListener("click", loadModel);
+els.saveProfile.addEventListener("click", () => { state.profile = readProfileFromForm(); saveState(); renderMessages(); setStatus(els.status.textContent, "プロフィールを保存しました"); });
+els.addMemory.addEventListener("click", () => addMemory(els.memoryInput.value));
+els.memoryInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addMemory(els.memoryInput.value); } });
+els.modelSelect.addEventListener("change", () => {
+  state.selectedModel = els.modelSelect.value; saveState();
+  if (engine) {
+    engine = null; els.input.disabled = true; els.send.disabled = true; els.load.disabled = false; els.load.textContent = "AIを準備する";
+    setStatus("モデル変更待ち", "新しいモデルを準備してください");
+  }
+});
+els.exportBtn.addEventListener("click", exportBackup);
+els.importInput.addEventListener("change", async () => {
+  try { await importBackup(els.importInput.files?.[0]); setStatus(els.status.textContent, "バックアップを復元しました"); }
+  catch (error) { alert(error?.message || "復元に失敗しました"); }
+  finally { els.importInput.value = ""; }
+});
+els.clearChat.addEventListener("click", () => {
+  if (!confirm("会話履歴だけ削除します。人格設定と記憶は残ります。よろしいですか？")) return;
+  state.messages = []; saveState(); renderMessages();
+});
+els.settingsToggle.addEventListener("click", () => els.settingsPanel.classList.toggle("mobile-hidden"));
+els.installBtn?.addEventListener("click", installApp);
+els.installBtnSettings?.addEventListener("click", installApp);
+
+hydrateProfile(); renderMemories(); renderMessages(); checkEnvironment();
+
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register("./sw.js").catch((error) => console.warn("Service worker registration failed", error));
+}
+
+  </script>
+</body>
+</html>
