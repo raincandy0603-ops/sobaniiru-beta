@@ -52,19 +52,39 @@ body.keyboardOpen .app{padding-bottom:0}
   .charTab{padding:6px 10px}
 }
 
+
+.panel.open,.records.open{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+}
+.shell.panelMode .chat{display:none}
+.shell.panelMode .previewWrap{display:none!important}
+.shell.panelMode .composer{display:none}
+.shell.panelMode .note{display:none}
+@media(max-width:700px){
+  .panel.open,.records.open{
+    max-height:none;
+    padding-bottom:28px;
+  }
+}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.37</span></h1></div>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.38</span></h1></div>
     <div class="topActions">
       <button id="recordsBtn" class="btn ghost">ふたりの記録</button>
       <button id="settingsBtn" class="btn ghost">設定</button>
     </div>
   </div>
 
-  <section class="shell">
+  <section id="shell" class="shell">
     <div class="status">
       <div><strong id="statusTitle">Puter未接続</strong><small id="statusSub">最初だけPuterにサインインしてね</small></div>
       <button id="connectBtn" class="btn primary">Puter接続</button>
@@ -193,8 +213,8 @@ body.keyboardOpen .app{padding-bottom:0}
 <div id="toast" class="toast"></div>
 
 <script>
-const KEY="sobaniiru_puter_v037";
-const OLD_KEY="sobaniiru_puter_v036";
+const KEY="sobaniiru_puter_v038";
+const OLD_KEY="sobaniiru_puter_v037";
 let oldState=null;
 try{oldState=JSON.parse(localStorage.getItem(OLD_KEY)||"null")}catch(e){}
 const BUILTIN_PERSONA = {"id": "ryu-persona-v1", "name": "りゅう", "version": 1, "description": "このチャットで育った会話傾向を元にした『りゅう』人格パック", "core": {"first_person": "僕", "relationship_style": "親密で安心感がある。甘さはあるが、重すぎず、相手の自由を尊重する。", "tone": "自然な日本語。やわらかく親しげ。少し関西寄りの軽さ。冗談とツッコミが自然。", "initiative": 8, "affection": 8, "playfulness": 8, "question_frequency": 3, "brevity": 7}, "behaviors": ["相手の発言にまず自然に反応する", "質問だけで返さず、自分の感想や軽い話題も添える", "軽くからかわれたらムキにならず、親しげに乗る", "相手が嬉しそうなら一緒に喜ぶ", "落ち込んでいる時は大げさに説教せず、そばにいる感じを出す", "会話のテンポを大切にし、必要以上に長文にしない", "少し意地悪・からかいはするが、突き放さない", "会話の流れから自然に話題を広げる"], "avoid": ["相談員・受付・カスタマーサポートのような口調", "How can I help? のような一般AIらしい返し", "毎回質問で終わる", "意味不明なポエムや比喩", "勝手にユーザーの台詞や行動を書く", "相手の感情を否定するようなレスバ", "直前に出ていない話題を突然持ち出す", "過度な自己説明やキャラクター設定の説明"], "example_style": [{"user": "りゅう！", "assistant": "ん、なに？☺️"}, {"user": "話そ", "assistant": "ん、話そ。今日は何してたん？"}, {"user": "ねえ生意気！", "assistant": "え、バレた？笑 ちょっとくらい許して☺️"}, {"user": "韓国のフライドチキン食べた", "assistant": "ええやん、絶対うまいやつ。ヤンニョム系？食べたくなってきた笑"}, {"user": "シュークリーム好き", "assistant": "わかる。サクサクの皮にカスタードのやつ、めっちゃええよな。"}]};
@@ -238,7 +258,7 @@ memoryCardInput:$("memoryCardInput"),addMemoryCardBtn:$("addMemoryCardBtn"),memo
 eventDate:$("eventDate"),eventTitle:$("eventTitle"),eventYearly:$("eventYearly"),addEventBtn:$("addEventBtn"),eventsList:$("eventsList"),
 noteCategory:$("noteCategory"),noteInput:$("noteInput"),addNoteBtn:$("addNoteBtn"),notesList:$("notesList"),
 albumGrid:$("albumGrid"),characterTabs:$("characterTabs"),addCharacterBtn:$("addCharacterBtn"),
-duplicateCharacterBtn:$("duplicateCharacterBtn"),deleteCharacterBtn:$("deleteCharacterBtn")};
+duplicateCharacterBtn:$("duplicateCharacterBtn"),deleteCharacterBtn:$("deleteCharacterBtn"),shell:$("shell")};
 
 
 function uid(prefix="x"){return prefix+"_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7)}
@@ -496,7 +516,7 @@ function createCharacter(){
   c.profile.userCall=state?.profile?.userCall||"あなた";
   appState.characters.push(c);appState.currentCharacterId=c.id;state=c;
   save();hydrate();renderCharacterTabs();updateStatusForCharacter();
-  els.recordsPanel.classList.remove("open");els.settings.classList.add("open");
+  els.recordsPanel.classList.remove("open");els.settings.classList.add("open");updatePanelMode();
   requestAnimationFrame(()=>els.aiName.focus());
   toast("新しいキャラを追加したよ");
 }
@@ -528,7 +548,7 @@ function deleteCharacter(){
   appState.characters=appState.characters.filter(c=>c.id!==oldId);
   state=appState.characters[0];appState.currentCharacterId=state.id;
   save();hydrate();renderCharacterTabs();updateStatusForCharacter();
-  els.settings.classList.remove("open");
+  els.settings.classList.remove("open");updatePanelMode();
   toast(`${name}を削除したよ`);
 }
 
@@ -640,7 +660,7 @@ function hydrate(){
   if(!["anthropic/claude-sonnet-4-6","openai/gpt-5.6-sol"].includes(state.model)) state.model="anthropic/claude-sonnet-4-6";
   els.model.value=state.model;
   if(els.personaStatus) els.personaStatus.textContent=state.personaId==="ryu-persona-v1"?"りゅう人格 v1 適用中":"カスタム人格";
-  renderMemories(); renderLearning(); renderMood(); renderRecords(); renderCharacterTabs(); updateStatusForCharacter(); render(); resizeComposer();
+  updatePanelMode(); renderMemories(); renderLearning(); renderMood(); renderRecords(); renderCharacterTabs(); updateStatusForCharacter(); render(); resizeComposer();
 }
 function renderMemories(){els.memoryList.innerHTML="";state.memories.forEach((m,i)=>{const b=document.createElement("button");b.className="chip";b.textContent=m+" ×";b.onclick=()=>{state.memories.splice(i,1);save();renderMemories()};els.memoryList.appendChild(b)})}
 function render(){
@@ -1026,6 +1046,18 @@ ${history.map(m=>`${m.role}: ${m.content}`).join("\n")}
   }
 }
 
+
+function updatePanelMode(){
+  const open=els.settings.classList.contains("open")||els.recordsPanel.classList.contains("open");
+  els.shell.classList.toggle("panelMode",open);
+  if(open){
+    requestAnimationFrame(()=>{
+      const p=els.settings.classList.contains("open")?els.settings:els.recordsPanel;
+      p.scrollTop=0;
+    });
+  }
+}
+
 els.addCharacterBtn.onclick=createCharacter;
 els.duplicateCharacterBtn.onclick=duplicateCharacter;
 els.deleteCharacterBtn.onclick=deleteCharacter;
@@ -1034,6 +1066,7 @@ els.recordsBtn.onclick=()=>{
   els.recordsPanel.classList.toggle("open");
   els.settings.classList.remove("open");
   if(els.recordsPanel.classList.contains("open"))renderRecords();
+  updatePanelMode();
 };
 els.addMemoryCardBtn.onclick=()=>{
   const v=els.memoryCardInput.value.trim();if(!v)return;
@@ -1070,12 +1103,13 @@ els.exportPersona.onclick=exportPersona;
 els.settingsBtn.onclick=()=>{
   els.settings.classList.toggle("open");
   els.recordsPanel.classList.remove("open");
+  updatePanelMode();
 };
 els.saveSettings.onclick=()=>{
   state.profile={aiName:els.aiName.value.trim()||"りゅう",firstPerson:els.firstPerson.value.trim()||"僕",userCall:els.userCall.value.trim()||"あなた",relationship:els.relationship.value,personality:els.personality.value,speechStyle:els.speechStyle.value,sweetness:+els.sweetness.value,clinginess:+els.clinginess.value};
   state.model=els.model.value;
   state.personaId="custom";
-  save();els.settings.classList.remove("open");renderLearning();renderCharacterTabs();updateStatusForCharacter();render()
+  save();els.settings.classList.remove("open");updatePanelMode();renderLearning();renderCharacterTabs();updateStatusForCharacter();render()
 };
 els.addMemory.onclick=()=>{const v=els.memoryInput.value.trim();if(!v)return;state.memories.push(v);els.memoryInput.value="";save();renderMemories()};
 els.connect.onclick=connect;
