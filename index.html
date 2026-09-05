@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.10</span></h1>
+        <h1>そばにいる。<span>β v0.11</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -150,7 +150,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
         <section class="card">
           <h2>端末内AI</h2>
           <label>モデル<select id="modelSelect"><option value="">AIを準備すると候補を取得します</option></select></label>
-          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.10から会話ディレクターが流れを補助します。</p>
+          <p id="modelHint" class="hint">ロールプレイ向けの会話モデルだけ表示します。v0.11はスマホ軽量化版。標準はQwen3-1.7B推奨です。</p>
         </section>
 
         <section class="card">
@@ -196,7 +196,7 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 7,
+    version: 8,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -220,7 +220,7 @@ function normalizeState(parsed) {
   return {
     ...base,
     ...incoming,
-    version: 7,
+    version: 8,
     modelChoiceMode: shouldUpgradeOldTinyModel ? "auto" : (incoming.modelChoiceMode || "auto"),
     selectedModel: shouldUpgradeOldTinyModel ? "" : oldModel,
     profile: { ...base.profile, ...(incoming.profile || {}) },
@@ -288,8 +288,7 @@ ${memoryText}
 - これはキャラクター会話・ロールプレイである。設定された人格、口調、関係性を会話の途中で忘れない。
 - あなたは汎用アシスタントや受付係ではなく、${p.userCall}と日常を話すコンパニオン。「何かお手伝いできますか？」「ご用件は？」「どうサポートできますか？」のような接客文句は、ユーザーが明確に作業依頼をしていない限り使わない。
 - 日本語で自然に会話する。質問への回答だけでなく、相手の意図や感情を拾って会話を一歩だけ進める。
-- ユーザーの言葉を分析・要約してから返すのではなく、まずその場の相手として自然に反応する。
-- キャラクター設定を説明したり、メタに「私はAIです」と毎回言ったりせず、必要な時だけ簡潔に扱う。
+- まずその場の相手として自然に反応する。説明・要約から始めない。
 - ユーザーの文をそのままオウム返ししない。同じ単語だけを返答にしない。
 - 名前だけ・呼びかけだけの短い発言は「呼ばれた」と理解し、「ん？呼んだ？」「ここにいるよ」など人格に合う自然な反応を返す。自分の名前をユーザー名として呼ばない。
 - 挨拶には挨拶を返し、そのあと親しい相手への一言を添える。初対面のカスタマー対応のように振る舞わない。
@@ -347,6 +346,18 @@ function checkEnvironment() {
   els.load.disabled = false;
   setStatus("AI未準備", "最初に「AIを準備する」を押してね");
   return true;
+}
+
+function updateLastAssistantBubbleFast(content) {
+  const rows = els.messages.querySelectorAll(".message-row.assistant");
+  const last = rows[rows.length - 1];
+  const bubble = last?.querySelector(".bubble");
+  if (bubble) {
+    bubble.textContent = content;
+    els.messages.scrollTop = els.messages.scrollHeight;
+    return true;
+  }
+  return false;
 }
 
 function renderMessages() {
@@ -446,7 +457,7 @@ function populateModels() {
     if (id === "Qwen3-4B-q4f16_1-MLC") return "💗 高品質ロールプレイ";
     if (id === "Qwen2.5-3B-Instruct-q4f16_1-MLC") return "✨ 安定・高品質";
     if (id === "Llama-3.2-3B-Instruct-q4f16_1-MLC") return "🎭 自然会話";
-    if (id === "Qwen3-1.7B-q4f16_1-MLC") return "🌷 軽量ロールプレイ";
+    if (id === "Qwen3-1.7B-q4f16_1-MLC") return "🌷 推奨・軽量ロールプレイ";
     if (id === "Qwen2.5-1.5B-Instruct-q4f16_1-MLC") return "🪶 軽量・安定";
     return "軽量";
   };
@@ -460,21 +471,26 @@ function populateModels() {
   }
 
   const available = new Set(candidates.map((m) => m.model_id));
-  const qualityPreferred =
-    deviceMem >= 8
+  const isMobileLike = window.matchMedia("(max-width: 900px)").matches;
+  const qualityPreferred = isMobileLike
+    ? [
+        "Qwen3-1.7B-q4f16_1-MLC",
+        "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+        "Qwen2.5-3B-Instruct-q4f16_1-MLC",
+        "Llama-3.2-3B-Instruct-q4f16_1-MLC"
+      ]
+    : (deviceMem >= 8
       ? [
           "Qwen3-4B-q4f16_1-MLC",
           "Qwen2.5-3B-Instruct-q4f16_1-MLC",
           "Llama-3.2-3B-Instruct-q4f16_1-MLC",
-          "Qwen3-1.7B-q4f16_1-MLC",
-          "Qwen2.5-1.5B-Instruct-q4f16_1-MLC"
+          "Qwen3-1.7B-q4f16_1-MLC"
         ]
       : [
           "Qwen3-1.7B-q4f16_1-MLC",
           "Qwen2.5-3B-Instruct-q4f16_1-MLC",
-          "Llama-3.2-3B-Instruct-q4f16_1-MLC",
           "Qwen2.5-1.5B-Instruct-q4f16_1-MLC"
-        ];
+        ]);
 
   const manualChoice =
     state.modelChoiceMode === "manual" &&
@@ -755,62 +771,29 @@ function conversationDirectorInstruction(userText) {
   const p = state.profile;
   const intent = conversationIntent(userText);
   const base = turnSpecificInstruction(userText);
-  const previous = previousAssistantText();
-  const themes = recentUserThemes();
-  const rules = [];
-
-  rules.push(`今回の会話意図は「${intent}」。`);
-  rules.push(`返答は${p.relationship}として自然に。質問だけで終わらず、あなた側の短い反応・意見・話題も必要に応じて入れる。`);
-  rules.push(`会話を毎回ゼロから始めない。直前までの流れを引き継ぐ。`);
+  const rules = [
+    `意図:${intent}`,
+    `${p.relationship}として自然に返す。会話をリセットしない。`
+  ];
 
   if (intent === "topic-request") {
-    rules.push("具体的な雑談テーマを一つ選び、その話題そのものから始める。『何を話したい？』『どんな話題がいい？』とユーザーへ丸投げしない。");
-    rules.push("候補を大量に羅列しない。まず一つ出して、自然に1つだけ問いかけるか、自分の一言を添える。");
-    if (state.memories.length) rules.push("保存された記憶に雑談へ使えそうな好みがあれば、押しつけず自然に一つだけ拾ってよい。");
-  }
-
-  if (intent === "talk-invite") {
-    rules.push("『うん、話そ』だけで終わらない。応じたあと、あなたから具体的な話題を一つ持ち出して会話を実際に始める。");
-    rules.push("『何話す？』と聞き返すだけの返答は禁止。");
-  }
-
-  if (intent === "bored") {
-    rules.push("暇つぶしをユーザーに選ばせるだけにせず、軽い雑談・二択・もしも話などを一つ自分から始める。");
-  }
-
-  if (intent === "what-doing") {
-    rules.push("現実に身体を持って何かしていると捏造しない。ただし説明臭くならず、『今は君と話してる』『呼ばれるの待ってた』程度の自然なコンパニオン表現で返す。");
-  }
-
-  if (intent === "continue") {
-    rules.push("短い相槌なので、新しい自己紹介や話題リセットをしない。直前の内容を一歩だけ先へ進める。");
-  }
-
-  if (intent === "long-share") {
-    rules.push("長めの話を要約して返すだけにしない。一番大事そうな点へ具体的に反応してから、必要なら一つだけ質問する。");
-  }
-
-  if (intent === "question") {
-    rules.push("まず質問に答える。答えずに逆質問だけ返すのは禁止。");
-  }
-
-  if (intent === "casual") {
-    rules.push("短い雑談なら、意味の薄いオウム返しを避け、自然な一言を足して会話を一歩だけ進める。");
-  }
-
-  if ((intent === "topic-request" || intent === "talk-invite") && previous) {
-    if (/(何話す|何を話|どんなことから|お話しよ|お話しましょ|話そう)[？?。]*$/.test(compactText(previous))) {
-      rules.push("直前のあなたの返答が曖昧で会話を始められていない。今回は必ず具体的なテーマ・内容を自分から出す。");
-    }
-  }
-
-  if (themes) {
-    rules.push(`直近のユーザー側の話題メモ: ${themes}`);
+    rules.push("話題を1つ自分から出す。何話す？と丸投げしない。");
+  } else if (intent === "talk-invite") {
+    rules.push("話そ、と応じた直後に具体的な話題を1つ出す。");
+  } else if (intent === "bored") {
+    rules.push("軽い雑談や二択を1つ自分から始める。");
+  } else if (intent === "continue") {
+    rules.push("直前の話を1歩だけ続ける。");
+  } else if (intent === "question") {
+    rules.push("まず質問に答える。逆質問だけで終わらない。");
+  } else if (intent === "long-share") {
+    rules.push("要約だけせず、一番大事な点へ具体的に反応する。");
   }
 
   if (base) rules.push(base);
   return rules.join("\n");
 }
+
 
 function turnSpecificInstruction(userText) {
   const t = String(userText || "").trim();
@@ -843,21 +826,34 @@ async function enforceCompanionQuality(assistantMsg, history, userText) {
     issue === "generic-chat-loop" ? "『話そ』『何話す？』だけで会話を開始せず、ユーザーへ話題選びを丸投げしている" :
     "空の返答";
 
+  const mobileLike = window.matchMedia("(max-width: 900px)").matches;
+
+  // スマホでは「自動でもう1回生成」が処理落ちの大きな原因になるので極力やらない。
+  if (mobileLike) {
+    const intent = conversationIntent(userText);
+
+    if (emotionCategory(userText)) {
+      const fallback = emotionalFallback(userText);
+      if (fallback) assistantMsg.content = fallback;
+    } else if (intent === "talk-invite") {
+      assistantMsg.content = `うん、話そ☺️ じゃあさ、今日いちばん印象に残ったことって何やった？`;
+    } else if (intent === "topic-request" || intent === "bored") {
+      assistantMsg.content = `じゃあ軽い話しよ☺️ 今もし予定ぜんぶ空いてたら、どこ行きたい？`;
+    } else if (issue === "echo") {
+      assistantMsg.content = `ん、ちゃんと聞いてるよ。もうちょい聞かせて☺️`;
+    } else {
+      assistantMsg.content = draft || `うん、もうちょい話そ。`;
+    }
+
+    renderMessages();
+    return;
+  }
+
   await streamAssistantInto(
     assistantMsg,
     history,
-    `さっきの候補「${draft}」は${reason}ため、コンパニオンとして不自然でした。${state.profile.userCall}との関係性と話し方の設定を優先して、まったく別の自然な返答に言い直してください。感情の打ち明けには、まず気持ちを受け止めてから親しい一言を返してください。雑談への誘いなら、あなたから具体的な話題を一つ出して会話を始めてください。「何かお手伝いできますか」「ご用件は」「どういうこと？」「何か心配事があったんですか？」「何話す？」などの丸投げ・接客文句は禁止です。`
+    `さっきの候補「${draft}」は${reason}ため不自然でした。${state.profile.userCall}との関係性を優先して、短く自然に言い直してください。`
   );
-
-  // 小型モデルが再生成でも同じ癖を出した場合は、会話の温度を守るため安全なローカル返答に着地させる。
-  const secondIssue = companionQualityIssue(userText, assistantMsg.content);
-  if (secondIssue && emotionCategory(userText)) {
-    const fallback = emotionalFallback(userText);
-    if (fallback) {
-      assistantMsg.content = fallback;
-      renderMessages();
-    }
-  }
 }
 
 async function streamAssistantInto(assistantMsg, history, extraInstruction = "") {
@@ -868,7 +864,7 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
     temperature: 0.84,
     top_p: 0.92,
     repetition_penalty: 1.06,
-    max_tokens: 340
+    max_tokens: 220
   };
 
   // Qwen3はロールプレイ中の思考ブロックを出さず、会話だけ返す。
@@ -878,16 +874,33 @@ async function streamAssistantInto(assistantMsg, history, extraInstruction = "")
 
   const stream = await engine.chat.completions.create(request);
   let gotToken = false;
+  let pending = "";
+  let lastPaint = performance.now();
+
   for await (const chunk of stream) {
     const delta = chunk.choices?.[0]?.delta?.content || "";
-    if (delta && !gotToken) {
+    if (!delta) continue;
+
+    if (!gotToken) {
       if (assistantMsg.content === "…") assistantMsg.content = "";
       gotToken = true;
     }
-    assistantMsg.content += delta;
-    renderMessages();
+
+    pending += delta;
+    const now = performance.now();
+
+    // スマホで毎トークンDOM再描画すると処理落ちするため、約120msごとにまとめて描画。
+    if (now - lastPaint >= 120) {
+      assistantMsg.content += pending;
+      pending = "";
+      lastPaint = now;
+      if (!updateLastAssistantBubbleFast(assistantMsg.content)) renderMessages();
+    }
   }
+
+  if (pending) assistantMsg.content += pending;
   if (assistantMsg.content === "…") assistantMsg.content = "";
+  renderMessages();
 }
 
 async function generateInitialGreeting() {
@@ -914,7 +927,7 @@ async function regenerateAssistant(index) {
   const replacement = { role: "assistant", content: "", at: new Date().toISOString() };
   state.messages[index] = replacement; renderMessages();
   try {
-    const history = state.messages.slice(0, index).slice(-18).map((m) => ({ role: m.role, content: m.content }));
+    const history = state.messages.slice(0, index).slice(-10).map((m) => ({ role: m.role, content: m.content }));
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content || "";
     const director = conversationDirectorInstruction(lastUser);
     await streamAssistantInto(replacement, history, `${director}
@@ -977,7 +990,7 @@ async function sendMessage(text) {
   }
 
   try {
-    const history = state.messages.slice(0, -1).slice(-18).map((m) => ({ role: m.role, content: m.content }));
+    const history = state.messages.slice(0, -1).slice(-10).map((m) => ({ role: m.role, content: m.content }));
     await streamAssistantInto(assistantMsg, history, conversationDirectorInstruction(clean));
     await enforceCompanionQuality(assistantMsg, history, clean);
     if (!assistantMsg.content.trim()) assistantMsg.content = "ん、もう一回話して？ ちゃんと聞きたい☺️";
