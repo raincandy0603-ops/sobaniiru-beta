@@ -1,0 +1,15 @@
+そばにいる。β Smart v0.22
+
+1) CloudflareでWorkerを作成
+2) cloudflare-worker.js を貼り付けてDeploy
+3) Workerの Settings → Variables and Secrets に
+   OPENAI_API_KEY を Secret で登録
+4) 任意で ALLOWED_ORIGIN に
+   https://raincandy0603-ops.github.io
+   を登録
+5) Worker URLをコピー
+6) GitHub Pagesの index.html をSmart版に置換
+7) アプリの設定 → Smart接続先 にWorker URLを入力
+8) Smart接続
+
+APIキーはindex.htmlやGitHubへ絶対に書かないでください。
