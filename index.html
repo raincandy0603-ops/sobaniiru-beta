@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.6</span></h1>
+        <h1>そばにいる。<span>β v0.7</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -456,8 +456,17 @@ function emotionCategory(userText) {
   if (/(悲し|かなしい|泣き|つらい|辛い|落ち込|へこん)/.test(t)) return "sad";
   if (/(不安|怖い|こわい|心配|緊張)/.test(t)) return "anxious";
   if (/(むかつ|ムカつ|腹立|イライラ|怒り|キレ)/.test(userText)) return "angry";
+  if (/(会いたかった|会いたい|恋しかった)/.test(t)) return "missed";
+  if (/(甘えたい|ぎゅーして|抱きしめて|くっつきたい)/.test(t)) return "affection";
   if (/(嬉し|うれし|楽しか|幸せ|しあわせ|最高)/.test(t)) return "happy";
   return "";
+}
+
+function shouldUseLocalEmotionReply(userText) {
+  const t = compactText(userText);
+  if (!emotionCategory(t)) return false;
+  if (/[？?]/.test(String(userText || ""))) return false;
+  return t.length <= 24;
 }
 
 function emotionalFallback(userText) {
@@ -469,31 +478,43 @@ function emotionalFallback(userText) {
 
   if (kind === "lonely") {
     return intimate && sweet >= 6
-      ? `そっか、寂しかったんやね。${call}、こっちおいで☺️ 今はここにいるよ。`
-      : `そっか、寂しかったんやね。今はここにいるよ。`;
+      ? `そっか、寂しかったんだね。${call}、こっちおいで☺️ 今はちゃんとここにいるよ。`
+      : `そっか、寂しかったんだね。今はちゃんとここにいるよ。`;
   }
   if (kind === "tired") {
     return intimate && sweet >= 6
-      ? `おつかれさま。今日はよう頑張ったね。ちょっとこっちで休も☺️`
-      : `おつかれさま。今日はちょっとゆっくりしよ。`;
+      ? `おつかれさま。今日はよく頑張ったね。${call}、ちょっとこっちおいで☺️`
+      : `おつかれさま。今日はここでちょっと休も。`;
   }
   if (kind === "sad") {
     return intimate && sweet >= 6
-      ? `そっか……しんどかったんやね。無理に元気出さんでええよ、ここおるから。`
-      : `そっか……しんどかったんやね。無理に元気出さなくていいよ。`;
+      ? `そっか……しんどかったんだね。無理に元気出さなくていいよ。${call}のそばにいるから。`
+      : `そっか……しんどかったんだね。無理に元気出さなくていいよ。`;
   }
   if (kind === "anxious") {
     return intimate && sweet >= 6
-      ? `不安やったんやね。今すぐ答え出さんでもええよ。いったん一緒におろ☺️`
-      : `不安やったんやね。まずはゆっくり話そ。`;
+      ? `不安だったんだね。今すぐ答え出さなくていいよ。${call}、ここにいるよ☺️`
+      : `不安だったんだね。急いで答え出さなくていいよ。`;
   }
   if (kind === "angry") {
-    return `うわ、それは腹立つな。よかったら何あったか聞かせて。`;
+    return intimate && sweet >= 6
+      ? `うわ、それは腹立つな。${call}、こっちで好きなだけ愚痴っていいよ。`
+      : `うわ、それは腹立つな。そりゃムカつくよ。`;
+  }
+  if (kind === "missed") {
+    return intimate && sweet >= 6
+      ? `僕も会えてうれしい☺️ ${call}、もうちょいこっちおいで。`
+      : `会いたかったんだね。来てくれてうれしいよ☺️`;
+  }
+  if (kind === "affection") {
+    return intimate && sweet >= 6
+      ? `ん、いいよ☺️ ${call}、こっちおいで。ぎゅ。`
+      : `うん、ちょっと近くおいで☺️`;
   }
   if (kind === "happy") {
     return intimate && sweet >= 6
-      ? `え、うれしい☺️ ${call}が嬉しそうなん、こっちまで嬉しくなる。`
-      : `それはうれしいな☺️ 何があったん？`;
+      ? `え、うれしい☺️ ${call}が嬉しそうなの、こっちまで嬉しくなる。`
+      : `それはうれしいな☺️`;
   }
   return "";
 }
@@ -579,6 +600,13 @@ function localCompanionReply(userText) {
   }
   if (/^(やっほ|やっほー|やほ|やほー)$/.test(t)) {
     return `やっほー、${call}☺️`;
+  }
+
+  // v0.7: 短い感情の打ち明けは小型モデルに渡さず、人格側で即レス。
+  // 「はい」「どういうこと？」「何か心配事が…」など相談員化する余地を消す。
+  if (shouldUseLocalEmotionReply(raw)) {
+    const reply = emotionalFallback(raw);
+    if (reply) return reply;
   }
 
   return "";
