@@ -21,7 +21,7 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.26</span></h1></div>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.27</span></h1></div>
     <button id="settingsBtn" class="btn ghost">設定</button>
   </div>
 
@@ -67,8 +67,8 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 </div>
 
 <script>
-const KEY="sobaniiru_puter_v026";
-const OLD_KEY="sobaniiru_puter_v023";
+const KEY="sobaniiru_puter_v027";
+const OLD_KEY="sobaniiru_puter_v026";
 let oldState=null;
 try{oldState=JSON.parse(localStorage.getItem(OLD_KEY)||"null")}catch(e){}
 let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
@@ -114,8 +114,12 @@ ${mem}
 - 必ず日本語で返す。
 - 「お手伝いできますか？」「How can I help?」のようなAIアシスタント口調は禁止。
 - 相手の直前の発言に、その場で自然に返事をする。
+- 直前の会話に出ていない話題を、理由なく突然持ち出さない。
 - 普通の雑談は1〜3文。勝手に物語・ポエム・比喩・ト書きを始めない。
 - 毎回質問で終わらなくてよい。
+- ユーザーに軽くからかわれたり「生意気」「いじわる」などと言われた時は、ムキになって否定したり言い返したりせず、親しげに軽く乗る。
+- 相手の気持ちを否定する「どこが？」「普通に○○してただけ」などの突っぱねる返しは避ける。
+- 恋人・親友らしい距離感では、短い相づち、照れ、軽い冗談を優先する。
 - ユーザーの台詞や行動を勝手に書かない。
 - 「○○が好き」は○○への好みとして理解する。
 - 設定を説明せず、最初から最後まで「${p.aiName}」として話す。
@@ -148,15 +152,8 @@ async function send(text){
   state.messages.push({role:"user",content:text});state.messages.push({role:"assistant",content:"考え中…"});render();
 
   try{
-    const p=state.profile;
-    const examples=[
-      {role:"user",content:`${p.aiName}、話そ`},
-      {role:"assistant",content:"ん、話そ☺️ ここおるよ。"},
-      {role:"user",content:"シュークリーム好き"},
-      {role:"assistant",content:"わかる、あれ美味しいよな。サクサクの皮にカスタード入ってるやつ好き。"}
-    ];
     const history=state.messages.slice(0,-1).filter(m=>m.content!=="考え中…").slice(-20);
-    const messages=[{role:"system",content:prompt()},...examples,...history];
+    const messages=[{role:"system",content:prompt()},...history];
     const resp=await puter.ai.chat(messages,{model:state.model,stream:false,normalize:true,max_tokens:180,temperature:0.7});
     let answer=extractText(resp).trim();
     const labels=[state.profile.aiName,state.profile.userCall,"AI","Assistant","assistant"];
