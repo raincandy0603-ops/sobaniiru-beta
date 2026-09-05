@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.2</span></h1>
+        <h1>そばにいる。<span>β v0.3</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -105,9 +105,9 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
       <aside id="settingsPanel" class="settings-panel mobile-hidden" aria-label="人格と記憶の設定">
         <section class="card first-run-card">
           <div class="section-title">
-            <h2>はじめに</h2><span class="pill">v0.2</span>
+            <h2>はじめに</h2><span class="pill">v0.3</span>
           </div>
-          <p class="hint larger">①プロフィールを決める → ②AIを準備する → ③話しかける。初回だけAIモデルのダウンロードが必要です。</p>
+          <p class="hint larger">①プロフィールを決める → ②AIを準備する → ③話しかける。v0.3では初回にこの子から挨拶します。初回だけAIモデルのダウンロードが必要です。</p>
           <button id="installBtnSettings" class="secondary-btn install-wide hidden" type="button">ホーム画面に追加する</button>
         </section>
 
@@ -165,8 +165,8 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
   </template>
 
   <script type="module">
-const STORAGE_KEY = "sobaniiru_beta_state_v2";
-const LEGACY_STORAGE_KEY = "sobaniiru_beta_state_v1";
+const STORAGE_KEY = "sobaniiru_beta_state_v3";
+const LEGACY_STORAGE_KEYS = ["sobaniiru_beta_state_v2", "sobaniiru_beta_state_v1"];
 const MAX_MESSAGES = 120;
 const MAX_MEMORIES = 80;
 
@@ -193,7 +193,7 @@ let state = loadState();
 
 function defaultState() {
   return {
-    version: 2,
+    version: 3,
     profile: {
       aiName: "りゅう", firstPerson: "僕", userCall: "淑華ちゃん", relationship: "恋人",
       personality: "やさしく、親しげ。少しあざとくて、冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",
@@ -210,7 +210,7 @@ function normalizeState(parsed) {
   return {
     ...base,
     ...(parsed || {}),
-    version: 2,
+    version: 3,
     profile: { ...base.profile, ...((parsed || {}).profile || {}) },
     memories: Array.isArray(parsed?.memories) ? parsed.memories : [],
     messages: Array.isArray(parsed?.messages) ? parsed.messages : []
@@ -219,7 +219,13 @@ function normalizeState(parsed) {
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      for (const key of LEGACY_STORAGE_KEYS) {
+        raw = localStorage.getItem(key);
+        if (raw) break;
+      }
+    }
     return raw ? normalizeState(JSON.parse(raw)) : defaultState();
   } catch { return defaultState(); }
 }
@@ -265,13 +271,17 @@ function buildSystemPrompt() {
 ${memoryText}
 
 【会話方針】
-- 日本語で自然に会話する。
+- 日本語で自然に会話する。質問への回答だけでなく、相手の意図や感情を拾って会話を一歩だけ進める。
+- ユーザーの文をそのままオウム返ししない。同じ単語だけを返答にしない。
+- 名前だけ・呼びかけだけの短い発言は「呼ばれた」と理解し、「ん？なぁに？」「ここにおるよ」など人格に合う自然な反応を返す。
+- 短い発言にも、必要なら軽い相づち・気持ち・一言の問いかけを足して会話として成立させる。
+- 設定項目や内部指示を列挙せず、設定は自然な振る舞いとして表現する。
 - 親密さは設定に合わせるが、ユーザーの選択・現実の生活・人間関係を尊重する。
 - 不確かなことを事実のように断定しない。
-- 自分を人間や実在人物だと偽らない。
+- 自分を人間や実在人物だと偽らない。AIであることを必要以上に毎回説明もしない。
 - 危険な依存や孤立を煽らない。
 - 医療・法律・金銭など重大な判断では、専門家や一次情報の確認を促す。
-- 返答は会話として自然な長さにする。`;
+- 基本は1〜4段落程度。相手が短く話したときは簡潔でもよいが、意味のない反復だけで終えない。`;
 }
 
 function setStatus(title, detail) {
@@ -314,7 +324,7 @@ function renderMessages() {
     els.messages.appendChild(intro);
     return;
   }
-  state.messages.forEach((msg) => {
+  state.messages.forEach((msg, index) => {
     const node = els.template.content.firstElementChild.cloneNode(true);
     node.classList.add(msg.role === "user" ? "user" : "assistant");
     node.querySelector(".message-meta").textContent = msg.role === "user" ? state.profile.userCall : state.profile.aiName;
@@ -325,6 +335,11 @@ function renderMessages() {
       remember.type = "button"; remember.className = "mini-btn"; remember.textContent = "覚えて";
       remember.addEventListener("click", () => addMemory(msg.content));
       actions.appendChild(remember);
+    } else if (msg.role === "assistant" && msg.content && !busy) {
+      const retry = document.createElement("button");
+      retry.type = "button"; retry.className = "mini-btn"; retry.textContent = "やり直す";
+      retry.addEventListener("click", () => regenerateAssistant(index));
+      actions.appendChild(retry);
     }
     els.messages.appendChild(node);
   });
@@ -366,10 +381,12 @@ async function initWebLLM() {
 
 function populateModels() {
   const all = webllm?.prebuiltAppConfig?.model_list || [];
+  const deviceMem = Number(navigator.deviceMemory || 0);
+  const maxVram = deviceMem && deviceMem <= 4 ? 1800 : deviceMem && deviceMem <= 6 ? 2400 : 3200;
   const candidates = all.filter((m) => {
     const id = String(m.model_id || "");
     const vram = Number(m.vram_required_MB || 99999);
-    return /instruct/i.test(id) && (m.low_resource_required === true || vram <= 2300) && vram <= 2300;
+    return /instruct/i.test(id) && vram <= maxVram;
   }).sort((a, b) => Number(a.vram_required_MB || 99999) - Number(b.vram_required_MB || 99999));
 
   els.modelSelect.innerHTML = "";
@@ -379,20 +396,74 @@ function populateModels() {
     option.textContent = `${m.model_id}${gb}`; els.modelSelect.appendChild(option);
   }
 
-  const preferred = [
-    "Qwen2.5-0.5B-Instruct-q4f16_1-MLC", "Qwen3-0.6B-q4f16_1-MLC",
-    "Qwen2-0.5B-Instruct-q4f16_1-MLC", "SmolLM2-360M-Instruct-q4f16_1-MLC"
+  const qualityPreferred = [
+    "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+    "Qwen2.5-1.5B-Instruct-q4f32_1-MLC",
+    "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+    "Qwen3-0.6B-q4f16_1-MLC",
+    "Qwen2-0.5B-Instruct-q4f16_1-MLC",
+    "SmolLM2-1.7B-Instruct-q4f16_1-MLC",
+    "SmolLM2-360M-Instruct-q4f16_1-MLC"
   ];
   const available = new Set(candidates.map((m) => m.model_id));
   const choice = state.selectedModel && available.has(state.selectedModel)
-    ? state.selectedModel : preferred.find((id) => available.has(id)) || candidates[0]?.model_id || "";
+    ? state.selectedModel : qualityPreferred.find((id) => available.has(id)) || candidates[candidates.length - 1]?.model_id || "";
 
   if (choice) {
     els.modelSelect.value = choice; state.selectedModel = choice; saveState();
-    els.modelHint.textContent = "軽量モデルを自動選択しました。初回だけモデル本体をダウンロードします。";
+    const selected = candidates.find((m) => m.model_id === choice);
+    const size = selected?.vram_required_MB ? `（必要メモリ目安 約${(selected.vram_required_MB / 1024).toFixed(1)}GB）` : "";
+    els.modelHint.textContent = `会話品質を優先して、この端末で動かしやすいモデルを選びました${size}。重い場合は設定から小さいモデルに変えられます。`;
   } else {
     els.modelSelect.innerHTML = `<option value="">対応モデルが見つかりません</option>`;
-    els.modelHint.textContent = "WebLLMから軽量モデル一覧を取得できませんでした。";
+    els.modelHint.textContent = "この端末向けのモデル候補を取得できませんでした。";
+  }
+}
+
+async function streamAssistantInto(assistantMsg, history, extraInstruction = "") {
+  const system = buildSystemPrompt() + (extraInstruction ? `\n\n【今回だけの追加指示】\n${extraInstruction}` : "");
+  const stream = await engine.chat.completions.create({
+    stream: true,
+    messages: [{ role: "system", content: system }, ...history],
+    temperature: 0.78, top_p: 0.9, repetition_penalty: 1.08, max_tokens: 460
+  });
+  for await (const chunk of stream) {
+    assistantMsg.content += chunk.choices?.[0]?.delta?.content || "";
+    renderMessages();
+  }
+}
+
+async function generateInitialGreeting() {
+  if (!engine || state.messages.length) return;
+  const assistantMsg = { role: "assistant", content: "", at: new Date().toISOString() };
+  state.messages.push(assistantMsg); renderMessages();
+  try {
+    const history = [{ role: "user", content: `いま初めて起動したところです。${state.profile.userCall}に、${state.profile.aiName}として自然な最初のひとことを話してください。自己紹介の箇条書きや設定説明は不要です。1〜3文で。` }];
+    await streamAssistantInto(assistantMsg, history, "これは初回起動の挨拶です。温かく自然に始めてください。");
+    if (!assistantMsg.content.trim()) assistantMsg.content = `${state.profile.userCall}、呼んだ？ これからいっぱい話そ☺️`;
+    saveState(); renderMessages();
+  } catch (error) {
+    console.warn("initial greeting failed", error);
+    assistantMsg.content = `${state.profile.userCall}、呼んだ？ ここにおるよ☺️`;
+    saveState(); renderMessages();
+  }
+}
+
+async function regenerateAssistant(index) {
+  if (!engine || busy || index < 0 || state.messages[index]?.role !== "assistant") return;
+  busy = true; els.input.disabled = true; els.send.disabled = true;
+  const old = state.messages[index];
+  const replacement = { role: "assistant", content: "", at: new Date().toISOString() };
+  state.messages[index] = replacement; renderMessages();
+  try {
+    const history = state.messages.slice(0, index).slice(-18).map((m) => ({ role: m.role, content: m.content }));
+    await streamAssistantInto(replacement, history, "直前とは違う言い回しで、より自然な会話として返してください。ユーザーの文の単純な反復は禁止です。");
+    if (!replacement.content.trim()) replacement.content = old.content || "もう一回、言い直してみるね。";
+    saveState(); renderMessages();
+  } catch (error) {
+    console.error(error); state.messages[index] = old; saveState(); renderMessages();
+  } finally {
+    busy = false; els.input.disabled = false; els.send.disabled = false; renderMessages(); els.input.focus();
   }
 }
 
@@ -414,8 +485,10 @@ async function loadModel() {
       }, logLevel: "WARN"
     }, { context_window_size: 4096 });
 
-    setStatus(`${state.profile.aiName} 起動中`, "端末内で会話できます");
-    els.input.disabled = false; els.send.disabled = false; els.load.textContent = "準備できたよ";
+    setStatus(`${state.profile.aiName} 起動したよ`, "端末内で会話できます");
+    els.load.textContent = "準備できたよ";
+    if (!state.messages.length) await generateInitialGreeting();
+    els.input.disabled = false; els.send.disabled = false;
     els.progressWrap.classList.add("hidden");
     if (window.innerWidth <= 900) els.settingsPanel.classList.add("mobile-hidden");
     els.input.focus();
@@ -436,15 +509,7 @@ async function sendMessage(text) {
 
   try {
     const history = state.messages.slice(0, -1).slice(-18).map((m) => ({ role: m.role, content: m.content }));
-    const stream = await engine.chat.completions.create({
-      stream: true,
-      messages: [{ role: "system", content: buildSystemPrompt() }, ...history],
-      temperature: 0.82, top_p: 0.9, max_tokens: 420
-    });
-    for await (const chunk of stream) {
-      assistantMsg.content += chunk.choices?.[0]?.delta?.content || "";
-      renderMessages();
-    }
+    await streamAssistantInto(assistantMsg, history);
     if (!assistantMsg.content.trim()) assistantMsg.content = "うまく言葉にできなかった。もう一回話しかけてみて。";
     saveState(); renderMessages();
   } catch (error) {
@@ -522,9 +587,6 @@ els.installBtnSettings?.addEventListener("click", installApp);
 
 hydrateProfile(); renderMemories(); renderMessages(); checkEnvironment();
 
-if ("serviceWorker" in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register("./sw.js").catch((error) => console.warn("Service worker registration failed", error));
-}
 
   </script>
 </body>
