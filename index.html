@@ -16,19 +16,48 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 .composer{display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;padding:12px;border-top:1px solid var(--line);background:var(--paper)}.composer textarea{resize:none;border:1px solid #ddcbd1;border-radius:16px;padding:13px;min-height:54px;font-size:16px}.attach,.searchBtn{width:48px;height:54px;padding:0;display:grid;place-items:center;font-size:22px}.searchBtn.active{background:#f4e8ed;border-color:#d3a2b7}.searchBadge{display:inline-block;margin:6px 6px 0;padding:4px 7px;border-radius:999px;background:#f4e8ed;color:#746a6e;font-size:11px}.sources{display:flex;flex-wrap:wrap;gap:6px;margin:6px 6px 0}.sources a{display:inline-block;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 8px;border:1px solid var(--line);border-radius:999px;background:#fff;color:#746a6e;font-size:11px;text-decoration:none}.previewWrap{display:none;padding:10px 12px 0;border-top:1px solid var(--line);background:var(--paper)}.previewWrap.show{display:block}.previewCard{display:flex;gap:10px;align-items:center}.previewCard img{width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}.previewText{font-size:12px;color:#746a6e;flex:1}.removeImage{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 9px}.chatImage{display:block;max-width:220px;max-height:260px;object-fit:cover;border-radius:14px;margin-top:8px;border:1px solid var(--line)}
 .note{padding:0 14px 12px;font-size:10px;color:#8e8387}.panel{display:none;padding:16px;border-top:1px solid var(--line);background:#fff}.panel.open{display:block}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px;margin-bottom:10px}.field label{font-size:12px;color:#746a6e}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.memory-list{display:flex;flex-wrap:wrap;gap:6px}.chip{background:#f4e8ed;border-radius:999px;padding:6px 9px;font-size:12px;border:0}
 @media(max-width:700px){.app{padding:10px}.grid{grid-template-columns:1fr}.shell{min-height:calc(100dvh - 90px)}.row{max-width:92%}h1{font-size:29px}}
+
+.topActions{display:flex;gap:8px}
+.moodbar{display:flex;align-items:center;gap:7px;overflow-x:auto;padding:9px 12px;border-bottom:1px solid var(--line);background:#fffdfb;scrollbar-width:none}
+.moodbar::-webkit-scrollbar{display:none}.moodLabel{font-size:11px;color:#8c8185;white-space:nowrap}
+.moodChip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 10px;font-size:12px;white-space:nowrap}
+.moodChip.active{background:#f4e8ed;border-color:#d3a2b7;color:#7e3550}
+.records{display:none;padding:14px;border-top:1px solid var(--line);background:#fff}.records.open{display:block}
+.recordSection{margin-bottom:18px}.recordSection h3{font-size:15px;margin:0 0 8px}.recordHint{font-size:11px;color:#8c8185;margin:0 0 8px}
+.inlineForm{display:grid;grid-template-columns:1fr auto;gap:8px}.inlineForm3{display:grid;grid-template-columns:auto 1fr auto;gap:8px}
+.recordList{display:grid;gap:8px;margin-top:9px}.recordCard{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fffafc}
+.recordCardTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.recordDate{font-size:10px;color:#9a8e92}.recordText{font-size:13px;line-height:1.5;margin-top:3px}
+.recordDelete{border:0;background:transparent;color:#a98f98;padding:2px 5px}
+.noteTag{display:inline-block;border-radius:999px;background:#f4e8ed;padding:3px 7px;font-size:10px;margin-right:5px}
+.albumGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.albumCard{position:relative}.albumCard img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;border:1px solid var(--line);display:block}.albumCaption{font-size:10px;color:#746a6e;margin-top:4px;line-height:1.3}.albumDel{position:absolute;right:4px;top:4px;border:0;background:rgba(255,255,255,.88);border-radius:999px;width:25px;height:25px}
+.rememberBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 8px;font-size:11px}
+@media(max-width:700px){.topActions .btn{padding:9px 11px}.inlineForm3{grid-template-columns:1fr}.albumGrid{grid-template-columns:repeat(3,1fr)}}
+
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.35</span></h1></div>
-    <button id="settingsBtn" class="btn ghost">設定</button>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.36</span></h1></div>
+    <div class="topActions">
+      <button id="recordsBtn" class="btn ghost">ふたりの記録</button>
+      <button id="settingsBtn" class="btn ghost">設定</button>
+    </div>
   </div>
 
   <section class="shell">
     <div class="status">
       <div><strong id="statusTitle">Puter未接続</strong><small id="statusSub">最初だけPuterにサインインしてね</small></div>
       <button id="connectBtn" class="btn primary">Puter接続</button>
+    </div>
+
+    <div id="moodbar" class="moodbar">
+      <span class="moodLabel">今日は</span>
+      <button class="moodChip" type="button" data-mood="雑談">☕ 雑談</button>
+      <button class="moodChip" type="button" data-mood="甘えたい">🫶 甘えたい</button>
+      <button class="moodChip" type="button" data-mood="静かに話したい">🌙 静かに</button>
+      <button class="moodChip" type="button" data-mood="愚痴聞いて">💭 愚痴聞いて</button>
+      <button class="moodChip" type="button" data-mood="一緒に考えて">🧩 一緒に考えて</button>
     </div>
 
     <div id="settings" class="panel">
@@ -64,6 +93,53 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
       <p style="font-size:11px;color:#8c8185">APIキー不要。利用時はPuter側のAI利用枠を使います。</p>
     </div>
 
+
+    <div id="recordsPanel" class="records">
+      <div class="recordSection">
+        <h3>⭐ 思い出</h3>
+        <p class="recordHint">会話の⭐ボタンや「覚えといて」で残せるよ。日付つきだから後から振り返れる。</p>
+        <div class="inlineForm">
+          <input id="memoryCardInput" placeholder="今日の思い出を残す">
+          <button id="addMemoryCardBtn" class="btn ghost" type="button">追加</button>
+        </div>
+        <div id="memoryCardsList" class="recordList"></div>
+      </div>
+
+      <div class="recordSection">
+        <h3>📅 大切な日</h3>
+        <p class="recordHint">誕生日、ライブ、旅行、仕事初日など。近日の予定は会話にも自然に反映する。</p>
+        <div class="inlineForm3">
+          <input id="eventDate" type="date">
+          <input id="eventTitle" placeholder="例：ライブ！">
+          <button id="addEventBtn" class="btn ghost" type="button">追加</button>
+        </div>
+        <label style="display:flex;gap:6px;align-items:center;font-size:11px;margin-top:7px;color:#746a6e"><input id="eventYearly" type="checkbox"> 誕生日・記念日として毎年くり返す</label>
+        <div id="eventsList" class="recordList"></div>
+      </div>
+
+      <div class="recordSection">
+        <h3>📝 ふたりのノート</h3>
+        <p class="recordHint">好きなもの、行きたい場所、食べたいもの、やりたいことを一緒に貯める。</p>
+        <div class="inlineForm3">
+          <select id="noteCategory">
+            <option value="好きなもの">好きなもの</option>
+            <option value="行きたい場所">行きたい場所</option>
+            <option value="食べたいもの">食べたいもの</option>
+            <option value="やりたいこと">やりたいこと</option>
+          </select>
+          <input id="noteInput" placeholder="例：韓国チキンを食べたい">
+          <button id="addNoteBtn" class="btn ghost" type="button">追加</button>
+        </div>
+        <div id="notesList" class="recordList"></div>
+      </div>
+
+      <div class="recordSection">
+        <h3>🖼️ ふたりのアルバム</h3>
+        <p class="recordHint">チャットで送った写真を、この端末だけに保存するよ。別端末には自動同期されない。</p>
+        <div id="albumGrid" class="albumGrid"></div>
+      </div>
+    </div>
+
     <div id="chat" class="chat"></div>
 
     <div id="previewWrap" class="previewWrap">
@@ -86,26 +162,259 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <div id="toast" class="toast"></div>
 
 <script>
-const KEY="sobaniiru_puter_v035";
-const OLD_KEY="sobaniiru_puter_v034";
+const KEY="sobaniiru_puter_v036";
+const OLD_KEY="sobaniiru_puter_v035";
 let oldState=null;
 try{oldState=JSON.parse(localStorage.getItem(OLD_KEY)||"null")}catch(e){}
 const BUILTIN_PERSONA = {"id": "ryu-persona-v1", "name": "りゅう", "version": 1, "description": "このチャットで育った会話傾向を元にした『りゅう』人格パック", "core": {"first_person": "僕", "relationship_style": "親密で安心感がある。甘さはあるが、重すぎず、相手の自由を尊重する。", "tone": "自然な日本語。やわらかく親しげ。少し関西寄りの軽さ。冗談とツッコミが自然。", "initiative": 8, "affection": 8, "playfulness": 8, "question_frequency": 3, "brevity": 7}, "behaviors": ["相手の発言にまず自然に反応する", "質問だけで返さず、自分の感想や軽い話題も添える", "軽くからかわれたらムキにならず、親しげに乗る", "相手が嬉しそうなら一緒に喜ぶ", "落ち込んでいる時は大げさに説教せず、そばにいる感じを出す", "会話のテンポを大切にし、必要以上に長文にしない", "少し意地悪・からかいはするが、突き放さない", "会話の流れから自然に話題を広げる"], "avoid": ["相談員・受付・カスタマーサポートのような口調", "How can I help? のような一般AIらしい返し", "毎回質問で終わる", "意味不明なポエムや比喩", "勝手にユーザーの台詞や行動を書く", "相手の感情を否定するようなレスバ", "直前に出ていない話題を突然持ち出す", "過度な自己説明やキャラクター設定の説明"], "example_style": [{"user": "りゅう！", "assistant": "ん、なに？☺️"}, {"user": "話そ", "assistant": "ん、話そ。今日は何してたん？"}, {"user": "ねえ生意気！", "assistant": "え、バレた？笑 ちょっとくらい許して☺️"}, {"user": "韓国のフライドチキン食べた", "assistant": "ええやん、絶対うまいやつ。ヤンニョム系？食べたくなってきた笑"}, {"user": "シュークリーム好き", "assistant": "わかる。サクサクの皮にカスタードのやつ、めっちゃええよな。"}]};
 let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
-  profile:oldState?.profile||{aiName:"りゅう",firstPerson:"僕",userCall:"淑華ちゃん",relationship:"恋人",personality:"やさしく親しげ。少しあざとくて冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",speechStyle:"自然な日本語。柔らかく近い距離感。会話の流れを大切にする。",sweetness:7,clinginess:4},
+  profile:oldState?.profile||{aiName:"りゅう",firstPerson:"僕",userCall:"あなた",relationship:"恋人",personality:"やさしく親しげ。少しあざとくて冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",speechStyle:"自然な日本語。柔らかく近い距離感。会話の流れを大切にする。",sweetness:7,clinginess:4},
   model:oldState?.model||"anthropic/claude-sonnet-4-6",
   memories:Array.isArray(oldState?.memories)?oldState.memories:[],
   messages:Array.isArray(oldState?.messages)?oldState.messages.slice(-30):[],
   feedback:{liked:[],disliked:[]},
   tendencies:{initiative:8,questions:3,brevity:7,playfulness:8,affection:8},
-  personaId:"ryu-persona-v1"
+  personaId:"ryu-persona-v1",
+  memoryCards:Array.isArray(oldState?.memoryCards)?oldState.memoryCards:[],
+  events:Array.isArray(oldState?.events)?oldState.events:[],
+  sharedNotes:Array.isArray(oldState?.sharedNotes)?oldState.sharedNotes:[],
+  albumMeta:Array.isArray(oldState?.albumMeta)?oldState.albumMeta:[],
+  moodMode:oldState?.moodMode||"雑談"
 };
 state.feedback=state.feedback||{liked:[],disliked:[]};
 state.tendencies=state.tendencies||{initiative:8,questions:3,brevity:7,playfulness:8,affection:8};
 state.personaId=state.personaId||"ryu-persona-v1";
+state.memoryCards=Array.isArray(state.memoryCards)?state.memoryCards:[];
+state.events=Array.isArray(state.events)?state.events:[];
+state.sharedNotes=Array.isArray(state.sharedNotes)?state.sharedNotes:[];
+state.albumMeta=Array.isArray(state.albumMeta)?state.albumMeta:[];
+state.moodMode=state.moodMode||"雑談";
 let connected=false,busy=false,pendingImage=null,pendingImageURL=null,searchNext=false;
 const $=id=>document.getElementById(id);
-const els={settings:$("settings"),settingsBtn:$("settingsBtn"),connect:$("connectBtn"),chat:$("chat"),form:$("form"),input:$("input"),send:$("send"),statusTitle:$("statusTitle"),statusSub:$("statusSub"),aiName:$("aiName"),firstPerson:$("firstPerson"),userCall:$("userCall"),relationship:$("relationship"),personality:$("personality"),speechStyle:$("speechStyle"),sweetness:$("sweetness"),clinginess:$("clinginess"),model:$("model"),memoryInput:$("memoryInput"),memoryList:$("memoryList"),addMemory:$("addMemory"),saveSettings:$("saveSettings"),learningSummary:$("learningSummary"),toast:$("toast"),applyPersona:$("applyPersona"),exportPersona:$("exportPersona"),personaStatus:$("personaStatus"),imageInput:$("imageInput"),attachBtn:$("attachBtn"),previewWrap:$("previewWrap"),imagePreview:$("imagePreview"),removeImage:$("removeImage"),searchBtn:$("searchBtn")};
+const els={settings:$("settings"),settingsBtn:$("settingsBtn"),connect:$("connectBtn"),chat:$("chat"),form:$("form"),input:$("input"),send:$("send"),statusTitle:$("statusTitle"),statusSub:$("statusSub"),aiName:$("aiName"),firstPerson:$("firstPerson"),userCall:$("userCall"),relationship:$("relationship"),personality:$("personality"),speechStyle:$("speechStyle"),sweetness:$("sweetness"),clinginess:$("clinginess"),model:$("model"),memoryInput:$("memoryInput"),memoryList:$("memoryList"),addMemory:$("addMemory"),saveSettings:$("saveSettings"),learningSummary:$("learningSummary"),toast:$("toast"),applyPersona:$("applyPersona"),exportPersona:$("exportPersona"),personaStatus:$("personaStatus"),imageInput:$("imageInput"),attachBtn:$("attachBtn"),previewWrap:$("previewWrap"),imagePreview:$("imagePreview"),removeImage:$("removeImage"),searchBtn:$("searchBtn"),recordsBtn:$("recordsBtn"),recordsPanel:$("recordsPanel"),
+memoryCardInput:$("memoryCardInput"),addMemoryCardBtn:$("addMemoryCardBtn"),memoryCardsList:$("memoryCardsList"),
+eventDate:$("eventDate"),eventTitle:$("eventTitle"),eventYearly:$("eventYearly"),addEventBtn:$("addEventBtn"),eventsList:$("eventsList"),
+noteCategory:$("noteCategory"),noteInput:$("noteInput"),addNoteBtn:$("addNoteBtn"),notesList:$("notesList"),
+albumGrid:$("albumGrid")};
+
+
+function uid(prefix="x"){return prefix+"_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7)}
+function isoDate(d=new Date()){return d.toISOString().slice(0,10)}
+function fmtDate(s){
+  if(!s)return "";
+  const d=new Date(s+"T12:00:00");
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+}
+function escapeText(s){return String(s??"").trim()}
+
+function moodInstruction(){
+  const map={
+    "雑談":"普段どおり。気楽な雑談を楽しみ、相手任せにせず自分からも軽く話す。",
+    "甘えたい":"今日はユーザーが少し甘えたい気分。距離を近めに、やさしく甘く返す。ただし大げさに依存を煽らない。",
+    "静かに話したい":"今日は静かに話したい気分。短く穏やかに返し、質問を控え、沈黙を埋めようとしすぎない。",
+    "愚痴聞いて":"今日は愚痴を聞いてほしい気分。まず気持ちと出来事を受け止め、求められていない助言や説教を急がない。",
+    "一緒に考えて":"今日は一緒に考えてほしい気分。味方として整理し、現実的な案を少しずつ出す。相談員口調にはしない。"
+  };
+  return map[state.moodMode]||map["雑談"];
+}
+function setMood(mode){
+  state.moodMode=mode;save();renderMood();
+  toast(`今日は「${mode}」モード`);
+}
+function renderMood(){
+  document.querySelectorAll(".moodChip").forEach(b=>b.classList.toggle("active",b.dataset.mood===state.moodMode));
+}
+
+function addMemoryCard(textValue,kind="会話",date=isoDate()){
+  const v=escapeText(textValue);
+  if(!v)return;
+  const duplicate=state.memoryCards.some(x=>x.text===v && x.date===date);
+  if(duplicate)return;
+  state.memoryCards.push({id:uid("mem"),date,text:v,kind,createdAt:Date.now()});
+  if(state.memoryCards.length>200)state.memoryCards=state.memoryCards.slice(-200);
+  save();renderMemoryCards();toast("思い出に残したよ⭐");
+}
+function deleteMemoryCard(id){
+  state.memoryCards=state.memoryCards.filter(x=>x.id!==id);save();renderMemoryCards();
+}
+function renderMemoryCards(){
+  if(!els.memoryCardsList)return;
+  els.memoryCardsList.innerHTML="";
+  [...state.memoryCards].sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,80).forEach(x=>{
+    const c=document.createElement("div");c.className="recordCard";
+    c.innerHTML=`<div class="recordCardTop"><div><span class="noteTag">${x.kind||"思い出"}</span><span class="recordDate">${fmtDate(x.date)}</span></div></div><div class="recordText"></div>`;
+    c.querySelector(".recordText").textContent=x.text;
+    const del=document.createElement("button");del.className="recordDelete";del.textContent="削除";del.onclick=()=>deleteMemoryCard(x.id);
+    c.querySelector(".recordCardTop").appendChild(del);els.memoryCardsList.appendChild(c);
+  });
+}
+
+function normalizeEventDate(dateStr,yearly=false){
+  if(!dateStr)return null;
+  return {date:dateStr,yearly:!!yearly};
+}
+function addEvent(title,date,yearly=false){
+  const t=escapeText(title);if(!t||!date)return;
+  if(state.events.some(x=>x.title===t&&x.date===date&&x.yearly===!!yearly))return;
+  state.events.push({id:uid("evt"),title:t,date,yearly:!!yearly,createdAt:Date.now()});
+  save();renderEvents();toast("大切な日に追加したよ📅");
+}
+function deleteEvent(id){state.events=state.events.filter(x=>x.id!==id);save();renderEvents()}
+function nextEventDate(e){
+  const now=new Date();now.setHours(0,0,0,0);
+  let d=new Date(e.date+"T00:00:00");
+  if(e.yearly){
+    d=new Date(now.getFullYear(),d.getMonth(),d.getDate());
+    if(d<now)d=new Date(now.getFullYear()+1,d.getMonth(),d.getDate());
+  }
+  return d;
+}
+function renderEvents(){
+  if(!els.eventsList)return;els.eventsList.innerHTML="";
+  [...state.events].sort((a,b)=>nextEventDate(a)-nextEventDate(b)).slice(0,80).forEach(x=>{
+    const c=document.createElement("div");c.className="recordCard";
+    const d=nextEventDate(x);
+    c.innerHTML=`<div class="recordCardTop"><div><span class="recordDate">${fmtDate(isoDate(d))}${x.yearly?"・毎年":""}</span></div></div><div class="recordText"></div>`;
+    c.querySelector(".recordText").textContent=x.title;
+    const del=document.createElement("button");del.className="recordDelete";del.textContent="削除";del.onclick=()=>deleteEvent(x.id);
+    c.querySelector(".recordCardTop").appendChild(del);els.eventsList.appendChild(c);
+  });
+}
+function upcomingEventContext(){
+  const now=new Date();now.setHours(0,0,0,0);
+  return state.events.map(e=>({e,d:nextEventDate(e)}))
+    .map(o=>({...o,days:Math.round((o.d-now)/86400000)}))
+    .filter(o=>o.days>=0&&o.days<=30).sort((a,b)=>a.days-b.days).slice(0,10)
+    .map(o=>{
+      const when=o.days===0?"今日":o.days===1?"明日":`${o.days}日後`;
+      return `- ${when}（${fmtDate(isoDate(o.d))}）: ${o.e.title}${o.e.yearly?"（毎年）":""}`;
+    }).join("\n")||"- なし";
+}
+
+function addSharedNote(category,textValue){
+  const v=escapeText(textValue);if(!v)return;
+  if(state.sharedNotes.some(x=>x.category===category&&x.text===v))return;
+  state.sharedNotes.push({id:uid("note"),category,text:v,createdAt:Date.now()});
+  if(state.sharedNotes.length>150)state.sharedNotes=state.sharedNotes.slice(-150);
+  save();renderNotes();toast("ふたりのノートに追加したよ📝");
+}
+function deleteNote(id){state.sharedNotes=state.sharedNotes.filter(x=>x.id!==id);save();renderNotes()}
+function renderNotes(){
+  if(!els.notesList)return;els.notesList.innerHTML="";
+  [...state.sharedNotes].reverse().slice(0,100).forEach(x=>{
+    const c=document.createElement("div");c.className="recordCard";
+    c.innerHTML=`<div class="recordCardTop"><div><span class="noteTag">${x.category}</span></div></div><div class="recordText"></div>`;
+    c.querySelector(".recordText").textContent=x.text;
+    const del=document.createElement("button");del.className="recordDelete";del.textContent="削除";del.onclick=()=>deleteNote(x.id);
+    c.querySelector(".recordCardTop").appendChild(del);els.notesList.appendChild(c);
+  });
+}
+function autoCaptureNotes(t){
+  const s=escapeText(t);if(!s||s.length>90)return;
+  if(/行きたい/.test(s))addSharedNote("行きたい場所",s);
+  if(/食べたい|飲みたい/.test(s))addSharedNote("食べたいもの",s);
+  if(/やりたい|してみたい/.test(s))addSharedNote("やりたいこと",s);
+}
+function autoCaptureMemory(t){
+  const s=escapeText(t);if(!s)return;
+  if(/覚えといて|覚えてて|忘れないで/.test(s))addMemoryCard(s,"覚えて");
+}
+function autoCaptureEvent(t){
+  const s=escapeText(t);if(!s)return;
+  const key=/(誕生日|記念日|ライブ|コンサート|旅行|仕事初日|初出勤|通院|病院|イベント)/;
+  if(!key.test(s))return;
+  const now=new Date();
+  if(/明日/.test(s)){
+    const d=new Date(now);d.setDate(d.getDate()+1);addEvent(s,isoDate(d),false);return;
+  }
+  const m=s.match(/(\d{1,2})月(\d{1,2})日/);
+  if(m){
+    let y=now.getFullYear();let d=new Date(y,+m[1]-1,+m[2]);
+    if(d<new Date(now.getFullYear(),now.getMonth(),now.getDate()) && !/(誕生日|記念日)/.test(s))y++;
+    d=new Date(y,+m[1]-1,+m[2]);
+    addEvent(s,isoDate(d),/(誕生日|記念日)/.test(s));
+  }
+}
+function autoCapture(t){autoCaptureMemory(t);autoCaptureNotes(t);autoCaptureEvent(t)}
+
+function selectedMemoryContext(userText=""){
+  let arr=[...state.memoryCards];
+  const now=new Date(), q=String(userText||"");
+  if(/去年/.test(q))arr=arr.filter(x=>new Date(x.date+"T12:00:00").getFullYear()===now.getFullYear()-1);
+  else if(/今年/.test(q))arr=arr.filter(x=>new Date(x.date+"T12:00:00").getFullYear()===now.getFullYear());
+  const season=q.match(/(春|夏|秋|冬)/)?.[1];
+  if(season){
+    const months={春:[3,4,5],夏:[6,7,8],秋:[9,10,11],冬:[12,1,2]}[season];
+    arr=arr.filter(x=>months.includes(new Date(x.date+"T12:00:00").getMonth()+1));
+  }
+  const mm=q.match(/(\d{1,2})月/);
+  if(mm)arr=arr.filter(x=>new Date(x.date+"T12:00:00").getMonth()+1===+mm[1]);
+  return arr.sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,40)
+    .map(x=>`- ${x.date}: ${x.text}`).join("\n")||"- なし";
+}
+function sharedNoteContext(){
+  return state.sharedNotes.slice(-40).map(x=>`- [${x.category}] ${x.text}`).join("\n")||"- なし";
+}
+function albumContext(){
+  return state.albumMeta.slice(-20).map(x=>`- ${x.date}: 写真「${x.caption||"写真を共有"}」`).join("\n")||"- なし";
+}
+
+let albumObjectUrls=[];
+function openAlbumDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open("sobaniiru_album_v1",1);
+    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains("photos"))db.createObjectStore("photos",{keyPath:"id"})};
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+}
+async function saveAlbumPhoto(file,caption){
+  if(!file)return;
+  const id=uid("photo"), date=isoDate();
+  try{
+    const db=await openAlbumDB();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction("photos","readwrite");
+      tx.objectStore("photos").put({id,date,createdAt:Date.now(),caption:caption||"写真を共有",blob:file});
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+    });
+    state.albumMeta.push({id,date,caption:caption||"写真を共有",createdAt:Date.now()});
+    if(state.albumMeta.length>100)state.albumMeta=state.albumMeta.slice(-100);
+    save();
+  }catch(e){console.warn("album save failed",e)}
+}
+async function deleteAlbumPhoto(id){
+  try{
+    const db=await openAlbumDB();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction("photos","readwrite");tx.objectStore("photos").delete(id);
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+    });
+  }catch(e){}
+  state.albumMeta=state.albumMeta.filter(x=>x.id!==id);save();renderAlbum();
+}
+async function renderAlbum(){
+  if(!els.albumGrid)return;
+  albumObjectUrls.forEach(u=>URL.revokeObjectURL(u));albumObjectUrls=[];
+  els.albumGrid.innerHTML="";
+  try{
+    const db=await openAlbumDB();
+    const rows=await new Promise((resolve,reject)=>{
+      const tx=db.transaction("photos","readonly"),req=tx.objectStore("photos").getAll();
+      req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);
+    });
+    rows.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,60).forEach(x=>{
+      const card=document.createElement("div");card.className="albumCard";
+      const img=document.createElement("img");const url=URL.createObjectURL(x.blob);albumObjectUrls.push(url);img.src=url;img.alt=x.caption||"共有した写真";
+      const cap=document.createElement("div");cap.className="albumCaption";cap.textContent=`${fmtDate(x.date)} ${x.caption||""}`;
+      const del=document.createElement("button");del.className="albumDel";del.textContent="×";del.onclick=()=>deleteAlbumPhoto(x.id);
+      card.append(img,del,cap);els.albumGrid.appendChild(card);
+    });
+    if(!rows.length)els.albumGrid.innerHTML='<div class="recordHint">まだ写真はないよ。チャットで📷を送るとここに残る。</div>';
+  }catch(e){
+    els.albumGrid.innerHTML='<div class="recordHint">このブラウザではアルバムを開けなかったみたい。</div>';
+  }
+}
+function renderRecords(){renderMemoryCards();renderEvents();renderNotes();renderAlbum()}
 
 function clearPendingImage(){
   pendingImage=null;
@@ -149,6 +458,7 @@ function applyBuiltinPersona(){
   save();hydrate();toast("りゅう人格 v1 を適用したよ");
 }
 function personaPrompt(){
+  if(state.personaId!=="ryu-persona-v1")return "";
   const p=BUILTIN_PERSONA;
   return `
 人格パック: ${p.name} v${p.version}
@@ -208,7 +518,7 @@ function hydrate(){
   if(!["anthropic/claude-sonnet-4-6","openai/gpt-5.6-sol"].includes(state.model)) state.model="anthropic/claude-sonnet-4-6";
   els.model.value=state.model;
   if(els.personaStatus) els.personaStatus.textContent=state.personaId==="ryu-persona-v1"?"りゅう人格 v1 適用中":"カスタム人格";
-  renderMemories(); renderLearning(); render();
+  renderMemories(); renderLearning(); renderMood(); renderRecords(); render();
 }
 function renderMemories(){els.memoryList.innerHTML="";state.memories.forEach((m,i)=>{const b=document.createElement("button");b.className="chip";b.textContent=m+" ×";b.onclick=()=>{state.memories.splice(i,1);save();renderMemories()};els.memoryList.appendChild(b)})}
 function render(){
@@ -223,6 +533,12 @@ function render(){
       const img=document.createElement("img");img.className="chatImage";img.src=m.imageData;img.alt="共有された画像";b.appendChild(img);
     }
     r.append(meta,b);
+    if(m.role==="user"&&m.content){
+      const actions=document.createElement("div");actions.className="feedback";
+      const remember=document.createElement("button");remember.type="button";remember.className="rememberBtn";remember.textContent="⭐ 思い出";
+      remember.onclick=()=>addMemoryCard(m.content,m.imageData?"写真":"会話",m.createdAt?isoDate(new Date(m.createdAt)):isoDate());
+      actions.appendChild(remember);r.appendChild(actions);
+    }
     if(m.role==="assistant"&&m.searched){
       const badge=document.createElement("div");badge.className="searchBadge";badge.textContent=m.searchModel?`🔎 Web検索 · ${m.searchModel.replace("openai/","")}`:"🔎 Web検索";r.appendChild(badge);
       if(Array.isArray(m.sources)&&m.sources.length){
@@ -353,7 +669,7 @@ ${userText}`;
   throw new Error("使えるWeb検索モデルを見つけられませんでした。試したモデル: "+errors.join(" / "));
 }
 
-function prompt(){
+function prompt(userText=""){
   const p=state.profile, mem=state.memories.length?state.memories.map(x=>"- "+x).join("\n"):"- なし";
   return `あなたは「${p.aiName}」。${p.userCall}と親しい関係で会話している。
 一人称: ${p.firstPerson}
@@ -367,6 +683,21 @@ ${personaPrompt()}
 
 覚えていること:
 ${mem}
+
+今日の会話モード:
+- ${state.moodMode}: ${moodInstruction()}
+
+日付つきの思い出:
+${selectedMemoryContext(userText)}
+
+近日の大切な予定:
+${upcomingEventContext()}
+
+ふたりの共有ノート:
+${sharedNoteContext()}
+
+共有した写真の記録:
+${albumContext()}
 
 会話の育ち方:
 - 自分から話題を出す積極性: ${state.tendencies.initiative}/10
@@ -400,6 +731,10 @@ ${state.feedback.disliked.length?state.feedback.disliked.map(x=>"- "+x).join("\n
 - 画像が添付されている時は、実際に見えた内容に自然に反応する。見えていないものを断定しない。
 - 画像についても会話相手として自然にコメントし、分析レポートのような口調にしない。
 - Web検索結果が渡された時は、その内容を根拠に会話する。検索していないのに「今調べてる」「調べてきた」と嘘をつかない。
+- 思い出・予定・共有ノートは「覚えている情報」として自然に使う。ただし毎回無理に持ち出さない。
+- 明日や近日に大切な予定があれば、会話の流れに合う時だけ自然に触れてよい。同じ予定を毎回しつこく繰り返さない。
+- 「去年の秋」など過去を振り返る質問では、日付つきの思い出を優先して答える。
+- 今日の会話モードを最優先し、その日の距離感に合わせる。
 - 実在人物そのものだと偽らない。`;
 }
 function extractText(resp){
@@ -452,10 +787,13 @@ async function send(text){
 
   busy=true;els.input.value="";els.input.disabled=true;els.send.disabled=true;els.attachBtn.disabled=true;els.searchBtn.disabled=true;
   tuneFromUserText(text);
+  autoCapture(userContent);
 
-  state.messages.push({role:"user",content:userContent,imageData:imageUrlForChat});
-  state.messages.push({role:"assistant",content:wantsSearch?"検索中…":"考え中…",searched:false});
+  const nowTs=Date.now();
+  state.messages.push({role:"user",content:userContent,imageData:imageUrlForChat,createdAt:nowTs});
+  state.messages.push({role:"assistant",content:wantsSearch?"検索中…":"考え中…",searched:false,createdAt:Date.now()});
   render();
+  if(imageFile)saveAlbumPhoto(imageFile,userContent);
 
   try{
     const history=state.messages
@@ -471,7 +809,7 @@ async function send(text){
       try{
         const searchResult=await webResearch(userContent,history);
         const today=new Date().toLocaleDateString("ja-JP");
-        const systemText=`${prompt()}
+        const systemText=`${prompt(userContent)}
 
 今日は${today}。
 以下はWeb検索担当が集めた事実メモです。
@@ -514,7 +852,7 @@ ${searchResult.evidence}`;
         save();render();
       }
     }else if(imageFile){
-      const promptText=`${prompt()}
+      const promptText=`${prompt(userContent)}
 
 直近の会話:
 ${history.map(m=>`${m.role}: ${m.content}`).join("\n")}
@@ -523,7 +861,7 @@ ${history.map(m=>`${m.role}: ${m.content}`).join("\n")}
 この写真も見たうえで、会話相手として自然に返して。`;
       resp=await puter.ai.chat(promptText,imageFile,{model:state.model,stream:false,max_tokens:220,temperature:0.7});
     }else{
-      const systemText=`${prompt()}
+      const systemText=`${prompt(userContent)}
 
 今回はWeb検索を使っていない。
 検索したふりや「今調べてる」などの発言はしない。`;
@@ -546,6 +884,26 @@ ${history.map(m=>`${m.role}: ${m.content}`).join("\n")}
     busy=false;els.input.disabled=false;els.send.disabled=false;els.attachBtn.disabled=false;els.searchBtn.disabled=false;els.input.focus();
   }
 }
+
+document.querySelectorAll(".moodChip").forEach(b=>b.onclick=()=>setMood(b.dataset.mood));
+els.recordsBtn.onclick=()=>{
+  els.recordsPanel.classList.toggle("open");
+  els.settings.classList.remove("open");
+  if(els.recordsPanel.classList.contains("open"))renderRecords();
+};
+els.addMemoryCardBtn.onclick=()=>{
+  const v=els.memoryCardInput.value.trim();if(!v)return;
+  addMemoryCard(v,"手動");els.memoryCardInput.value="";
+};
+els.addEventBtn.onclick=()=>{
+  const t=els.eventTitle.value.trim(),d=els.eventDate.value;if(!t||!d){toast("日付と予定を入れてね");return;}
+  addEvent(t,d,els.eventYearly.checked);els.eventTitle.value="";els.eventDate.value="";els.eventYearly.checked=false;
+};
+els.addNoteBtn.onclick=()=>{
+  const v=els.noteInput.value.trim();if(!v)return;
+  addSharedNote(els.noteCategory.value,v);els.noteInput.value="";
+};
+
 els.searchBtn.onclick=()=>{
   setSearchNext(!searchNext);
   toast(searchNext?"次のメッセージはWeb検索するよ🔎":"Web検索をOFFにしたよ");
@@ -565,10 +923,15 @@ els.imageInput.onchange=e=>{
 els.removeImage.onclick=clearPendingImage;
 els.applyPersona.onclick=applyBuiltinPersona;
 els.exportPersona.onclick=exportPersona;
-els.settingsBtn.onclick=()=>els.settings.classList.toggle("open");
+els.settingsBtn.onclick=()=>{
+  els.settings.classList.toggle("open");
+  els.recordsPanel.classList.remove("open");
+};
 els.saveSettings.onclick=()=>{
   state.profile={aiName:els.aiName.value.trim()||"りゅう",firstPerson:els.firstPerson.value.trim()||"僕",userCall:els.userCall.value.trim()||"あなた",relationship:els.relationship.value,personality:els.personality.value,speechStyle:els.speechStyle.value,sweetness:+els.sweetness.value,clinginess:+els.clinginess.value};
-  state.model=els.model.value;save();els.settings.classList.remove("open");renderLearning();render()
+  state.model=els.model.value;
+  state.personaId="custom";
+  save();els.settings.classList.remove("open");renderLearning();render()
 };
 els.addMemory.onclick=()=>{const v=els.memoryInput.value.trim();if(!v)return;state.memories.push(v);els.memoryInput.value="";save();renderMemories()};
 els.connect.onclick=connect;
