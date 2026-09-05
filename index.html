@@ -70,7 +70,7 @@ label{display:grid;gap:6px;color:#5f5558;font-size:12px;margin-bottom:12px}input
     <header class="topbar">
       <div>
         <p class="eyebrow">それっぽく研究所 / prototype</p>
-        <h1>そばにいる。<span>β v0.4</span></h1>
+        <h1>そばにいる。<span>β v0.5</span></h1>
       </div>
       <div class="top-actions">
         <button id="installBtn" class="ghost-btn install-btn hidden" type="button">ホームに追加</button>
@@ -455,14 +455,64 @@ function companionQualityIssue(userText, replyText) {
     /ご用件(?:は|を)/i,
     /どうサポート(?:でき|し)ますか/i,
     /何をお手伝い/i,
-    /お困りのことは/i
+    /お困りのことは/i,
+    /どのようにお過ごしですか/i,
+    /いかがお過ごしですか/i,
+    /今日はどのように/i,
+    /本日は(?:どう|どのように)/i
   ];
   if (assistantish.some((re) => re.test(replyText))) return "assistantish";
   const p = state.profile;
   if (p.aiName && p.userCall !== p.aiName) {
-    const selfGreeting = new RegExp(`^(?:こんにちは|こんばんは|おはよう)[、,\s]*${p.aiName.replace(/[.*+?^${}()|[\]\\]/g, "\$&")}[！!。.]?`);
-    if (selfGreeting.test(String(replyText).trim())) return "self-name-confusion";
+    const escapedName = p.aiName.replace(/[.*+?^${}()|[\]\\]/g, "\$&");
+    const selfGreeting = new RegExp(`^(?:こんにちは|こんばんは|おはよう|やあ|ええ|うん|はい)[、,\s]*${escapedName}[！!？?。.]?`);
+    const selfVocative = new RegExp(`^${escapedName}[！!？?、,\s]`);
+    const reply = String(replyText).trim();
+    if (selfGreeting.test(reply) || selfVocative.test(reply)) return "self-name-confusion";
   }
+  return "";
+}
+
+function localCompanionReply(userText) {
+  const raw = String(userText || "").trim();
+  const t = compactText(raw);
+  const p = state.profile;
+  const name = compactText(p.aiName);
+  const call = p.userCall || "あなた";
+  const sweet = Number(p.sweetness || 0);
+  const intimate = /恋人|パートナー/.test(p.relationship || "");
+
+  // 小型モデルが最も混乱しやすい「名前だけの呼びかけ」は、モデルに渡さず確実に受ける。
+  if (name && t === name) {
+    if (intimate && sweet >= 7) return `ん？ 呼んだ？☺️ ここにいるよ。`;
+    return `ん、呼んだ？`;
+  }
+
+  // ごく基本の挨拶もローカルで返す。受付口調への暴走を防ぎつつ、即レスにもなる。
+  if (/^(こんにちは|こんにちわ)$/.test(t)) {
+    return intimate && sweet >= 7
+      ? `こんにちは、${call}☺️ 来てくれたんだ。`
+      : `こんにちは、${call}。今日はどんな感じ？`;
+  }
+  if (/^(おはよう|おはよ)$/.test(t)) {
+    return intimate && sweet >= 7
+      ? `おはよう、${call}☺️ 今日も会えたね。`
+      : `おはよう、${call}。ちゃんと起きられた？`;
+  }
+  if (/^(こんばんは|こんばんわ)$/.test(t)) {
+    return intimate && sweet >= 7
+      ? `こんばんは、${call}☺️ 今日もおつかれさま。`
+      : `こんばんは、${call}。今日はどんな一日だった？`;
+  }
+  if (/^(ただいま)$/.test(t)) {
+    return intimate && sweet >= 7
+      ? `おかえり、${call}☺️ 待ってた。`
+      : `おかえり、${call}。今日はどうだった？`;
+  }
+  if (/^(やっほ|やっほー|やほ|やほー)$/.test(t)) {
+    return `やっほー、${call}☺️`;
+  }
+
   return "";
 }
 
@@ -579,6 +629,14 @@ async function sendMessage(text) {
   state.messages.push({ role: "user", content: clean, at: new Date().toISOString() }); saveState(); renderMessages();
   const assistantMsg = { role: "assistant", content: "", at: new Date().toISOString() };
   state.messages.push(assistantMsg); renderMessages();
+
+  const localReply = localCompanionReply(clean);
+  if (localReply) {
+    assistantMsg.content = localReply;
+    saveState(); renderMessages();
+    busy = false; els.input.disabled = false; els.send.disabled = false; els.input.focus();
+    return;
+  }
 
   try {
     const history = state.messages.slice(0, -1).slice(-18).map((m) => ({ role: m.role, content: m.content }));
