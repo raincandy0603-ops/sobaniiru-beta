@@ -12,7 +12,7 @@
 button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;padding:11px 16px;font-weight:700}.primary{background:var(--accent);color:#fff}.ghost{background:#fff;border:1px solid var(--line)}
 .shell{background:var(--paper);border:1px solid var(--line);border-radius:24px;overflow:hidden;min-height:80vh;display:flex;flex-direction:column}
 .status{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:16px;border-bottom:1px solid var(--line)}.status strong{display:block}.status small{color:#8c8185}
-.chat{flex:1;min-height:0;overflow:auto;padding:18px}.row{margin:0 0 18px;max-width:84%}.row.user{margin-left:auto}.meta{font-size:11px;color:#8c8185;margin:0 6px 6px}.row.user .meta{text-align:right}.bubble{padding:14px 16px;border-radius:18px;background:var(--pink);white-space:pre-wrap;line-height:1.6}.user .bubble{background:var(--ink);color:#fff}
+.chat{flex:1;min-height:0;overflow:auto;padding:18px}.row{margin:0 0 18px;max-width:84%}.row.user{margin-left:auto}.meta{font-size:11px;color:#8c8185;margin:0 6px 6px}.row.user .meta{text-align:right}.bubble{padding:14px 16px;border-radius:18px;background:var(--pink);white-space:pre-wrap;line-height:1.6}.user .bubble{background:var(--ink);color:#fff}.feedback{display:flex;gap:6px;margin:6px 6px 0}.feedback button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 9px;font-size:13px}.feedback button.active{background:#f4e8ed;border-color:#d9afc0}.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2f292d;color:#fff;padding:9px 13px;border-radius:999px;font-size:12px;opacity:0;pointer-events:none;transition:.2s;z-index:9}.toast.show{opacity:1}
 .composer{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px;border-top:1px solid var(--line);background:var(--paper)}.composer textarea{resize:none;border:1px solid #ddcbd1;border-radius:16px;padding:13px;min-height:54px;font-size:16px}
 .note{padding:0 14px 12px;font-size:10px;color:#8e8387}.panel{display:none;padding:16px;border-top:1px solid var(--line);background:#fff}.panel.open{display:block}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px;margin-bottom:10px}.field label{font-size:12px;color:#746a6e}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.memory-list{display:flex;flex-wrap:wrap;gap:6px}.chip{background:#f4e8ed;border-radius:999px;padding:6px 9px;font-size:12px;border:0}
 @media(max-width:700px){.app{padding:10px}.grid{grid-template-columns:1fr}.shell{min-height:calc(100dvh - 90px)}.row{max-width:92%}h1{font-size:29px}}
@@ -21,7 +21,7 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.27</span></h1></div>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.28</span></h1></div>
     <button id="settingsBtn" class="btn ghost">設定</button>
   </div>
 
@@ -52,6 +52,7 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
       </div>
       <div class="field"><label>記憶を追加</label><div style="display:flex;gap:8px"><input id="memoryInput" placeholder="例：シュークリームはサクサク派"><button id="addMemory" class="btn ghost">追加</button></div></div>
       <div id="memoryList" class="memory-list"></div>
+      <div class="field"><label>育ち方</label><div id="learningSummary" style="font-size:12px;line-height:1.7;color:#746a6e;background:#fff7fa;border:1px solid var(--line);border-radius:12px;padding:10px"></div></div>
       <button id="saveSettings" class="btn primary" style="margin-top:12px">保存</button>
       <p style="font-size:11px;color:#8c8185">APIキー不要。利用時はPuter側のAI利用枠を使います。</p>
     </div>
@@ -65,23 +66,58 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
     <div class="note">会話・人格・記憶はこのブラウザ内に保存。AI返答はPuter.js経由で生成します。</div>
   </section>
 </div>
+<div id="toast" class="toast"></div>
 
 <script>
-const KEY="sobaniiru_puter_v027";
-const OLD_KEY="sobaniiru_puter_v026";
+const KEY="sobaniiru_puter_v028";
+const OLD_KEY="sobaniiru_puter_v027";
 let oldState=null;
 try{oldState=JSON.parse(localStorage.getItem(OLD_KEY)||"null")}catch(e){}
 let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
   profile:oldState?.profile||{aiName:"りゅう",firstPerson:"僕",userCall:"淑華ちゃん",relationship:"恋人",personality:"やさしく親しげ。少しあざとくて冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",speechStyle:"自然な日本語。柔らかく近い距離感。会話の流れを大切にする。",sweetness:7,clinginess:4},
-  model:"anthropic/claude-sonnet-4-6",
+  model:oldState?.model||"anthropic/claude-sonnet-4-6",
   memories:Array.isArray(oldState?.memories)?oldState.memories:[],
-  messages:[]
+  messages:Array.isArray(oldState?.messages)?oldState.messages.slice(-30):[],
+  feedback:{liked:[],disliked:[]},
+  tendencies:{initiative:7,questions:4,brevity:7,playfulness:6,affection:7}
 };
+state.feedback=state.feedback||{liked:[],disliked:[]};
+state.tendencies=state.tendencies||{initiative:7,questions:4,brevity:7,playfulness:6,affection:7};
 let connected=false,busy=false;
 const $=id=>document.getElementById(id);
-const els={settings:$("settings"),settingsBtn:$("settingsBtn"),connect:$("connectBtn"),chat:$("chat"),form:$("form"),input:$("input"),send:$("send"),statusTitle:$("statusTitle"),statusSub:$("statusSub"),aiName:$("aiName"),firstPerson:$("firstPerson"),userCall:$("userCall"),relationship:$("relationship"),personality:$("personality"),speechStyle:$("speechStyle"),sweetness:$("sweetness"),clinginess:$("clinginess"),model:$("model"),memoryInput:$("memoryInput"),memoryList:$("memoryList"),addMemory:$("addMemory"),saveSettings:$("saveSettings")};
+const els={settings:$("settings"),settingsBtn:$("settingsBtn"),connect:$("connectBtn"),chat:$("chat"),form:$("form"),input:$("input"),send:$("send"),statusTitle:$("statusTitle"),statusSub:$("statusSub"),aiName:$("aiName"),firstPerson:$("firstPerson"),userCall:$("userCall"),relationship:$("relationship"),personality:$("personality"),speechStyle:$("speechStyle"),sweetness:$("sweetness"),clinginess:$("clinginess"),model:$("model"),memoryInput:$("memoryInput"),memoryList:$("memoryList"),addMemory:$("addMemory"),saveSettings:$("saveSettings"),learningSummary:$("learningSummary"),toast:$("toast")};
 
 function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function clamp(v){return Math.max(0,Math.min(10,v))}
+function toast(msg){
+  els.toast.textContent=msg;els.toast.classList.add("show");
+  clearTimeout(toast._t);toast._t=setTimeout(()=>els.toast.classList.remove("show"),1300);
+}
+function renderLearning(){
+  const t=state.tendencies;
+  if(!els.learningSummary)return;
+  els.learningSummary.textContent=`自分から話す ${t.initiative}/10 ・ 質問 ${t.questions}/10 ・ 短め ${t.brevity}/10 ・ ふざけ度 ${t.playfulness}/10 ・ 甘さ ${t.affection}/10`;
+}
+function tuneFromUserText(text){
+  const t=state.tendencies;
+  if(/そっちから|自分から|話題.*(出|考)/.test(text)) t.initiative=clamp(t.initiative+1);
+  if(/質問.*(多|ばっか|やめ)|質問攻め/.test(text)) t.questions=clamp(t.questions-1);
+  if(/もっと.*(甘|近|距離)/.test(text)) t.affection=clamp(t.affection+1);
+  if(/短く|長い/.test(text)) t.brevity=clamp(t.brevity+1);
+  if(/もっと.*(長|詳しく)/.test(text)) t.brevity=clamp(t.brevity-1);
+}
+function learnFromFeedback(messageIndex,positive){
+  const m=state.messages[messageIndex];
+  if(!m||m.role!=="assistant")return;
+  m.feedback=positive?"like":"dislike";
+  const bucket=positive?state.feedback.liked:state.feedback.disliked;
+  bucket.push(m.content.slice(0,220)); if(bucket.length>6) bucket.shift();
+  const t=state.tendencies, s=m.content;
+  if(/[？?]/.test(s)) t.questions=clamp(t.questions+(positive?1:-1));
+  if(s.length>120) t.brevity=clamp(t.brevity+(positive?-1:1));
+  if(/笑|w|🤣|😂|☺️|😏|🥹/.test(s)) t.playfulness=clamp(t.playfulness+(positive?1:-1));
+  save();render();renderLearning();toast(positive?"この返し、好みとして覚えた👍":"この返しは避けるように覚えた👎");
+}
 function hydrate(){
   const p=state.profile;
   for(const k of ["aiName","firstPerson","userCall","relationship","personality","speechStyle","sweetness","clinginess"]) if(els[k]) els[k].value=p[k];
@@ -89,12 +125,27 @@ function hydrate(){
   if(state.model==="gpt-5.6-luna"||state.model==="claude-sonnet-4.6") state.model="aion-labs/aion-rp-llama-3.1-8b";
   if(!["anthropic/claude-sonnet-4-6","openai/gpt-5.6-sol"].includes(state.model)) state.model="anthropic/claude-sonnet-4-6";
   els.model.value=state.model;
-  renderMemories(); render();
+  renderMemories(); renderLearning(); render();
 }
 function renderMemories(){els.memoryList.innerHTML="";state.memories.forEach((m,i)=>{const b=document.createElement("button");b.className="chip";b.textContent=m+" ×";b.onclick=()=>{state.memories.splice(i,1);save();renderMemories()};els.memoryList.appendChild(b)})}
 function render(){
   els.chat.innerHTML="";
-  state.messages.slice(-40).forEach(m=>{const r=document.createElement("div");r.className="row "+m.role;const meta=document.createElement("div");meta.className="meta";meta.textContent=m.role==="user"?state.profile.userCall:state.profile.aiName;const b=document.createElement("div");b.className="bubble";b.textContent=m.content;r.append(meta,b);els.chat.appendChild(r)});
+  const start=Math.max(0,state.messages.length-40);
+  state.messages.slice(start).forEach((m,j)=>{
+    const idx=start+j;
+    const r=document.createElement("div");r.className="row "+m.role;
+    const meta=document.createElement("div");meta.className="meta";meta.textContent=m.role==="user"?state.profile.userCall:state.profile.aiName;
+    const b=document.createElement("div");b.className="bubble";b.textContent=m.content;
+    r.append(meta,b);
+    if(m.role==="assistant"&&m.content!=="考え中…"){
+      const f=document.createElement("div");f.className="feedback";
+      const up=document.createElement("button");up.type="button";up.textContent="👍";if(m.feedback==="like")up.classList.add("active");
+      const down=document.createElement("button");down.type="button";down.textContent="👎";if(m.feedback==="dislike")down.classList.add("active");
+      up.onclick=()=>learnFromFeedback(idx,true);down.onclick=()=>learnFromFeedback(idx,false);
+      f.append(up,down);r.appendChild(f);
+    }
+    els.chat.appendChild(r)
+  });
   requestAnimationFrame(()=>els.chat.scrollTop=els.chat.scrollHeight);
 }
 function prompt(){
@@ -110,6 +161,19 @@ function prompt(){
 覚えていること:
 ${mem}
 
+会話の育ち方:
+- 自分から話題を出す積極性: ${state.tendencies.initiative}/10
+- 質問の多さ: ${state.tendencies.questions}/10
+- 短めに返す好み: ${state.tendencies.brevity}/10
+- 冗談や軽口: ${state.tendencies.playfulness}/10
+- 甘さ・距離の近さ: ${state.tendencies.affection}/10
+
+好まれた返しの例:
+${state.feedback.liked.length?state.feedback.liked.map(x=>"- "+x).join("\n"):"- まだなし"}
+
+避けたい返しの例:
+${state.feedback.disliked.length?state.feedback.disliked.map(x=>"- "+x).join("\n"):"- まだなし"}
+
 最重要:
 - 必ず日本語で返す。
 - 「お手伝いできますか？」「How can I help?」のようなAIアシスタント口調は禁止。
@@ -123,6 +187,9 @@ ${mem}
 - ユーザーの台詞や行動を勝手に書かない。
 - 「○○が好き」は○○への好みとして理解する。
 - 設定を説明せず、最初から最後まで「${p.aiName}」として話す。
+- 上の「会話の育ち方」と好み/避けたい例を、次の返答の調整に使う。
+- 積極性が高い時は、相手任せにせず自分から小さな話題や感想を出す。
+- 質問の多さが低い時は、質問で返すより自分の反応や一言を優先する。
 - 実在人物そのものだと偽らない。`;
 }
 function extractText(resp){
@@ -149,6 +216,7 @@ async function connect(){
 async function send(text){
   text=text.trim();if(!text||busy||!connected)return;
   busy=true;els.input.value="";els.input.disabled=true;els.send.disabled=true;
+  tuneFromUserText(text);
   state.messages.push({role:"user",content:text});state.messages.push({role:"assistant",content:"考え中…"});render();
 
   try{
@@ -173,7 +241,7 @@ async function send(text){
 els.settingsBtn.onclick=()=>els.settings.classList.toggle("open");
 els.saveSettings.onclick=()=>{
   state.profile={aiName:els.aiName.value.trim()||"りゅう",firstPerson:els.firstPerson.value.trim()||"僕",userCall:els.userCall.value.trim()||"あなた",relationship:els.relationship.value,personality:els.personality.value,speechStyle:els.speechStyle.value,sweetness:+els.sweetness.value,clinginess:+els.clinginess.value};
-  state.model=els.model.value;save();els.settings.classList.remove("open");render()
+  state.model=els.model.value;save();els.settings.classList.remove("open");renderLearning();render()
 };
 els.addMemory.onclick=()=>{const v=els.memoryInput.value.trim();if(!v)return;state.memories.push(v);els.memoryInput.value="";save();renderMemories()};
 els.connect.onclick=connect;
