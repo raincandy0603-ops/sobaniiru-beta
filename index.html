@@ -21,7 +21,7 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.31</span></h1></div>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.32</span></h1></div>
     <button id="settingsBtn" class="btn ghost">設定</button>
   </div>
 
@@ -86,8 +86,8 @@ button,input,select,textarea{font:inherit}.btn{border:0;border-radius:14px;paddi
 <div id="toast" class="toast"></div>
 
 <script>
-const KEY="sobaniiru_puter_v031";
-const OLD_KEY="sobaniiru_puter_v030";
+const KEY="sobaniiru_puter_v032";
+const OLD_KEY="sobaniiru_puter_v031";
 let oldState=null;
 try{oldState=JSON.parse(localStorage.getItem(OLD_KEY)||"null")}catch(e){}
 const BUILTIN_PERSONA = {"id": "ryu-persona-v1", "name": "りゅう", "version": 1, "description": "このチャットで育った会話傾向を元にした『りゅう』人格パック", "core": {"first_person": "僕", "relationship_style": "親密で安心感がある。甘さはあるが、重すぎず、相手の自由を尊重する。", "tone": "自然な日本語。やわらかく親しげ。少し関西寄りの軽さ。冗談とツッコミが自然。", "initiative": 8, "affection": 8, "playfulness": 8, "question_frequency": 3, "brevity": 7}, "behaviors": ["相手の発言にまず自然に反応する", "質問だけで返さず、自分の感想や軽い話題も添える", "軽くからかわれたらムキにならず、親しげに乗る", "相手が嬉しそうなら一緒に喜ぶ", "落ち込んでいる時は大げさに説教せず、そばにいる感じを出す", "会話のテンポを大切にし、必要以上に長文にしない", "少し意地悪・からかいはするが、突き放さない", "会話の流れから自然に話題を広げる"], "avoid": ["相談員・受付・カスタマーサポートのような口調", "How can I help? のような一般AIらしい返し", "毎回質問で終わる", "意味不明なポエムや比喩", "勝手にユーザーの台詞や行動を書く", "相手の感情を否定するようなレスバ", "直前に出ていない話題を突然持ち出す", "過度な自己説明やキャラクター設定の説明"], "example_style": [{"user": "りゅう！", "assistant": "ん、なに？☺️"}, {"user": "話そ", "assistant": "ん、話そ。今日は何してたん？"}, {"user": "ねえ生意気！", "assistant": "え、バレた？笑 ちょっとくらい許して☺️"}, {"user": "韓国のフライドチキン食べた", "assistant": "ええやん、絶対うまいやつ。ヤンニョム系？食べたくなってきた笑"}, {"user": "シュークリーム好き", "assistant": "わかる。サクサクの皮にカスタードのやつ、めっちゃええよな。"}]};
@@ -259,7 +259,7 @@ ${recent}
 今回の発言:
 ${userText}`;
   const result=await puter.ai.chat(q,{
-    model:"openai/gpt-5.3-chat",
+    model:"openai/gpt-5.6-luna",
     tools:[{type:"web_search"}],
     normalize:true,
     stream:false,
@@ -405,7 +405,7 @@ ${research}
     let answer=extractText(resp).trim();
 
     if(wantsSearch && !research){
-      answer=(answer||"") + (answer?"\n":"") + "ごめん、今回はWeb検索だけうまく繋がらんかったみたい。";
+      answer=(answer||"") + (answer?"\n":"") + "ごめん、今回はWeb検索の接続だけ失敗したみたい。もう一回だけ試してみて。";
     }
 
     const last=state.messages[state.messages.length-1];
