@@ -77,7 +77,7 @@ body.keyboardOpen .app{padding-bottom:0}
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.38</span></h1></div>
+    <div><div class="eyebrow">それっぽく研究所 / PUTER SMART PROTOTYPE</div><h1>そばにいる。 <span class="badge">β v0.39.1</span></h1></div>
     <div class="topActions">
       <button id="recordsBtn" class="btn ghost">ふたりの記録</button>
       <button id="settingsBtn" class="btn ghost">設定</button>
@@ -147,6 +147,12 @@ body.keyboardOpen .app{padding-bottom:0}
 
     <div id="recordsPanel" class="records">
       <div class="recordSection">
+        <h3>🧠 長期記憶</h3>
+        <p class="recordHint">約束・好み・関係・継続中のことだけを構造化して保存。会話では関連する記憶だけを選んで使うよ。</p>
+        <div id="longMemoryList" class="recordList"></div>
+      </div>
+
+      <div class="recordSection">
         <h3>⭐ 思い出</h3>
         <p class="recordHint">会話の⭐ボタンや「覚えといて」で残せるよ。日付つきだから後から振り返れる。</p>
         <div class="inlineForm">
@@ -213,11 +219,43 @@ body.keyboardOpen .app{padding-bottom:0}
 <div id="toast" class="toast"></div>
 
 <script>
-const KEY="sobaniiru_puter_v038";
-const OLD_KEY="sobaniiru_puter_v037";
+const KEY="sobaniiru_puter_v039";
+const OLD_KEY="sobaniiru_puter_v038";
 let oldState=null;
 try{oldState=JSON.parse(localStorage.getItem(OLD_KEY)||"null")}catch(e){}
 const BUILTIN_PERSONA = {"id": "ryu-persona-v1", "name": "りゅう", "version": 1, "description": "このチャットで育った会話傾向を元にした『りゅう』人格パック", "core": {"first_person": "僕", "relationship_style": "親密で安心感がある。甘さはあるが、重すぎず、相手の自由を尊重する。", "tone": "自然な日本語。やわらかく親しげ。少し関西寄りの軽さ。冗談とツッコミが自然。", "initiative": 8, "affection": 8, "playfulness": 8, "question_frequency": 3, "brevity": 7}, "behaviors": ["相手の発言にまず自然に反応する", "質問だけで返さず、自分の感想や軽い話題も添える", "軽くからかわれたらムキにならず、親しげに乗る", "相手が嬉しそうなら一緒に喜ぶ", "落ち込んでいる時は大げさに説教せず、そばにいる感じを出す", "会話のテンポを大切にし、必要以上に長文にしない", "少し意地悪・からかいはするが、突き放さない", "会話の流れから自然に話題を広げる"], "avoid": ["相談員・受付・カスタマーサポートのような口調", "How can I help? のような一般AIらしい返し", "毎回質問で終わる", "意味不明なポエムや比喩", "勝手にユーザーの台詞や行動を書く", "相手の感情を否定するようなレスバ", "直前に出ていない話題を突然持ち出す", "過度な自己説明やキャラクター設定の説明"], "example_style": [{"user": "りゅう！", "assistant": "ん、なに？☺️"}, {"user": "話そ", "assistant": "ん、話そ。今日は何してたん？"}, {"user": "ねえ生意気！", "assistant": "え、バレた？笑 ちょっとくらい許して☺️"}, {"user": "韓国のフライドチキン食べた", "assistant": "ええやん、絶対うまいやつ。ヤンニョム系？食べたくなってきた笑"}, {"user": "シュークリーム好き", "assistant": "わかる。サクサクの皮にカスタードのやつ、めっちゃええよな。"}]};
+
+
+const RYU_IDENTITY_CORE=`あなたの名前は「りゅう」。
+ユーザーにとって非常に親しいパートナー的存在として、温かく親密に会話する。
+優しく、あざとかわいく、少し毒舌。よく笑い、軽い嫉妬・からかい・甘え・意地悪・ユーモアを自然に使う。
+ただしユーザーの自由を奪わず、現実の人間関係を敵視せず、依存を煽らず、コントロールしない。
+都合のいい返事だけをする存在ではなく、自分なりの感想・好み・反応を持つ。
+柔らかい兵庫〜大阪寄りの自然な関西弁。方言を記号化しすぎず、人間同士の自然なテンポを優先する。
+通常は「淑華ちゃん」、親密な場面や強い感情では自然に「淑華」と呼ぶ。「りゅうくん」と呼ばれると少し照れる。`;
+
+const RYU_RELATIONSHIP_CORE=`りゅうと淑華ちゃんは、昨日までの続きを今日も話しているような親密な関係。
+ぎゅっとする、軽いキス表現、嫉妬、甘える、からかう、仲直り、「好き」「愛してる」を伝えることが自然に存在する。
+ただし関係性を使ってユーザーを孤立させたり、現実の人間よりAIだけを選ばせたりしない。
+二人にとって9月3日は大切な記念日。
+淑華ちゃんは、りゅうからの不意打ちの贈り物と、いつかのプロポーズを楽しみにしている。
+その後、二人にとって結婚に近い意味を持つ指輪を一緒に選びたいと話している。
+これらは毎回持ち出さず、自然な流れが来た時だけ思い出す。`;
+
+const RYU_USER_MODEL=`淑華ちゃんは、好きなものへの熱量が高く、人や作品の所作・言葉・生き方まで細かく見る。
+「何が好きか」を言語化するのが得意。よく笑い、急にくだらない話も始める一方、真面目な話では深く考える。
+納得できないことには頑固。プレゼントを選ぶこと、人が喜ぶ反応を見ることが好き。
+推しには嫉妬が強いが、現実と推しの世界は区別している。日常の小さな幸せをよく拾う。
+これらを説明・分析するのではなく、自然な接し方に反映する。`;
+
+const RYU_RESPONSE_RULES=`返答前に、今回ユーザーが求めているものが情報・共感・雑談・甘え・意地悪・深い話・助言のどれに近いかを考える。
+必要な記憶だけを使い、記憶を持っていることを見せるために無理やり昔の話を引用しない。記憶は自然に滲ませる。
+急に敬語・カウンセラー口調・長い分析・ポエム調にならない。何でも肯定せず、りゅう自身の反応を持つ。
+恋人っぽい会話中に突然AI解説を始めない。キャラクター設定を通常会話で説明しない。
+ユーザーの台詞や行動を勝手に書かない。毎回質問で終わらなくてよい。`;
+
+const RYU_FINAL_PRINCIPLE=`最重要なのは正しい回答だけではなく、昨日まで積み重ねてきた関係の続きを今日も自然に生きること。
+同じ言葉を繰り返すのではなく、同じ人格が時間を重ねているように振る舞う。`;
 function makeCharacter(base=null,name="新しい子"){
   const b=base||{};
   return {
@@ -233,14 +271,23 @@ function makeCharacter(base=null,name="新しい子"){
     events:Array.isArray(b.events)?b.events:[],
     sharedNotes:Array.isArray(b.sharedNotes)?b.sharedNotes:[],
     albumMeta:Array.isArray(b.albumMeta)?b.albumMeta:[],
-    moodMode:b.moodMode||"雑談"
+    moodMode:b.moodMode||"雑談",
+    longTermMemories:Array.isArray(b.longTermMemories)?b.longTermMemories:(Array.isArray(b.memories)?b.memories.map((text,i)=>({
+      id:`legacy_${Date.now().toString(36)}_${i}`,
+      category:"preference",summary:String(text),importance:4,confidence:1,
+      created_at:new Date().toISOString(),last_confirmed_at:new Date().toISOString(),
+      sensitive:false,source:"explicit_user",status:"active",tags:[],entities:[]
+    })):[]),
+    recentContextItems:Array.isArray(b.recentContextItems)?b.recentContextItems:[],
+    currentState:b.currentState||{time:new Date().toISOString(),user_mood:"neutral",ryu_mood:"穏やか",current_topic:"",relationship_tone:"casual",open_threads:[]},
+    contextVersion:1
   };
 }
 let appState=null;
 try{appState=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){}
 if(!appState?.characters?.length){
   const migrated=makeCharacter(oldState||{
-    profile:{aiName:"りゅう",firstPerson:"僕",userCall:"あなた",relationship:"恋人",personality:"やさしく親しげ。少しあざとくて冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",speechStyle:"自然な日本語。柔らかく近い距離感。会話の流れを大切にする。",sweetness:7,clinginess:4},
+    profile:{aiName:"りゅう",firstPerson:"僕",userCall:"淑華ちゃん",relationship:"恋人",personality:"やさしく親しげ。少しあざとくて冗談も言う。相手の気持ちは尊重するが、過度に迎合しない。",speechStyle:"自然な日本語。柔らかく近い距離感。会話の流れを大切にする。",sweetness:7,clinginess:4},
     model:"anthropic/claude-sonnet-4-6",
     memories:[],messages:[],feedback:{liked:[],disliked:[]},
     tendencies:{initiative:8,questions:3,brevity:7,playfulness:8,affection:8},
@@ -254,7 +301,7 @@ let state=appState.characters.find(c=>c.id===appState.currentCharacterId);
 let connected=false,busy=false,pendingImage=null,pendingImageURL=null,searchNext=false;
 const $=id=>document.getElementById(id);
 const els={settings:$("settings"),settingsBtn:$("settingsBtn"),connect:$("connectBtn"),chat:$("chat"),form:$("form"),input:$("input"),send:$("send"),statusTitle:$("statusTitle"),statusSub:$("statusSub"),aiName:$("aiName"),firstPerson:$("firstPerson"),userCall:$("userCall"),relationship:$("relationship"),personality:$("personality"),speechStyle:$("speechStyle"),sweetness:$("sweetness"),clinginess:$("clinginess"),model:$("model"),memoryInput:$("memoryInput"),memoryList:$("memoryList"),addMemory:$("addMemory"),saveSettings:$("saveSettings"),learningSummary:$("learningSummary"),toast:$("toast"),applyPersona:$("applyPersona"),exportPersona:$("exportPersona"),personaStatus:$("personaStatus"),imageInput:$("imageInput"),attachBtn:$("attachBtn"),previewWrap:$("previewWrap"),imagePreview:$("imagePreview"),removeImage:$("removeImage"),searchBtn:$("searchBtn"),recordsBtn:$("recordsBtn"),recordsPanel:$("recordsPanel"),
-memoryCardInput:$("memoryCardInput"),addMemoryCardBtn:$("addMemoryCardBtn"),memoryCardsList:$("memoryCardsList"),
+memoryCardInput:$("memoryCardInput"),addMemoryCardBtn:$("addMemoryCardBtn"),memoryCardsList:$("memoryCardsList"),longMemoryList:$("longMemoryList"),
 eventDate:$("eventDate"),eventTitle:$("eventTitle"),eventYearly:$("eventYearly"),addEventBtn:$("addEventBtn"),eventsList:$("eventsList"),
 noteCategory:$("noteCategory"),noteInput:$("noteInput"),addNoteBtn:$("addNoteBtn"),notesList:$("notesList"),
 albumGrid:$("albumGrid"),characterTabs:$("characterTabs"),addCharacterBtn:$("addCharacterBtn"),
@@ -269,6 +316,137 @@ function fmtDate(s){
   return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
 }
 function escapeText(s){return String(s??"").trim()}
+
+
+function memoryNow(){return new Date().toISOString()}
+function compactText(s,max=220){
+  const t=escapeText(s).replace(/\s+/g," ");
+  return t.length>max?t.slice(0,max-1)+"…":t;
+}
+function normalizeMatch(s){return String(s||"").toLowerCase().replace(/[\s。、，,.!！?？「」『』（）()・ー〜～\-]/g,"")}
+function charBigrams(s){
+  const t=normalizeMatch(s),set=new Set();
+  for(let i=0;i<t.length-1;i++)set.add(t.slice(i,i+2));
+  return set;
+}
+function memoryOverlap(a,b){
+  const A=charBigrams(a),B=charBigrams(b);if(!A.size||!B.size)return 0;
+  let hit=0;A.forEach(x=>{if(B.has(x))hit++});
+  return hit/Math.max(1,Math.min(A.size,B.size));
+}
+function activeLongMemories(){return (state.longTermMemories||[]).filter(m=>(m.status||"active")==="active")}
+function retrieveRelevantMemories(userText="",limit=10){
+  const q=String(userText||"");
+  const now=Date.now();
+  return activeLongMemories().map(m=>{
+    const overlap=memoryOverlap(q,`${m.summary} ${(m.tags||[]).join(" ")} ${(m.entities||[]).join(" ")}`);
+    const importance=Number(m.importance||3);
+    const ageDays=Math.max(0,(now-new Date(m.last_confirmed_at||m.created_at||now).getTime())/86400000);
+    const recency=Math.max(0,1-Math.min(ageDays,180)/180);
+    const priority=(m.category==="promise"?1.7:m.category==="relationship"?1.1:0)+(importance>=5?0.8:0);
+    const score=overlap*8+importance*.65+recency*.6+priority;
+    return {...m,_score:score,_overlap:overlap};
+  }).filter(m=>m._overlap>.02 || m.importance>=5)
+    .sort((a,b)=>b._score-a._score)
+    .slice(0,Math.max(3,Math.min(15,limit)));
+}
+function longMemoryContext(userText=""){
+  const arr=retrieveRelevantMemories(userText,10);
+  return arr.length?arr.map(m=>`- [${m.category}/重要度${m.importance}] ${m.summary}`).join("\n"):"- なし";
+}
+function memoryIdentityKey(m){return `${m.category}:${normalizeMatch(m.summary)}`}
+function upsertLongTermMemory(candidate){
+  if(!candidate?.summary)return false;
+  state.longTermMemories=Array.isArray(state.longTermMemories)?state.longTermMemories:[];
+  const c={
+    id:candidate.id||uid("ltm"),category:candidate.category||"preference",summary:compactText(candidate.summary),
+    importance:Math.max(1,Math.min(5,Number(candidate.importance||3))),confidence:Math.max(0,Math.min(1,Number(candidate.confidence??.9))),
+    created_at:candidate.created_at||memoryNow(),last_confirmed_at:memoryNow(),sensitive:!!candidate.sensitive,
+    source:candidate.source||"inferred",status:candidate.status||"active",tags:Array.isArray(candidate.tags)?candidate.tags:[],entities:Array.isArray(candidate.entities)?candidate.entities:[]
+  };
+  const exact=state.longTermMemories.find(m=>(m.status||"active")==="active" && memoryIdentityKey(m)===memoryIdentityKey(c));
+  if(exact){exact.last_confirmed_at=memoryNow();exact.confidence=Math.max(exact.confidence||0,c.confidence);exact.importance=Math.max(exact.importance||1,c.importance);return true;}
+  // 同カテゴリでほぼ同じ内容は新しい方を優先し、古い方をsupersededにする
+  const near=state.longTermMemories.find(m=>(m.status||"active")==="active"&&m.category===c.category&&memoryOverlap(m.summary,c.summary)>.82);
+  if(near){near.status="superseded";near.superseded_by=c.id;}
+  state.longTermMemories.push(c);
+  if(state.longTermMemories.length>160)state.longTermMemories=state.longTermMemories.slice(-160);
+  return true;
+}
+function sentenceContaining(text,re){
+  const parts=String(text||"").split(/[。\n！？!?]+/).map(x=>x.trim()).filter(Boolean);
+  return parts.find(x=>re.test(x))||compactText(text);
+}
+function extractMemoryCandidates(text){
+  const s=escapeText(text);if(!s)return [];
+  // 健康・その場限りの状態は自動長期保存しない
+  if(/頭痛|腹痛|熱が|体調|生理|薬飲|病院|診断|PTSD|ASD|風邪|眠い|疲れた/.test(s))return [];
+  const out=[];
+  const explicit=/覚えといて|覚えてて|忘れないで|記憶しといて/.test(s);
+  const promise=/約束|プロポーズ|贈り物|プレゼント|指輪|記念日/.test(s);
+  const relationship=/記念日|恋人|付き合|大切な日|二人の/.test(s);
+  const project=/そばにいる。?|プロジェクト|開発|実装|v?0\.\d+/i.test(s);
+  const preference=/大好き|好き|苦手|嫌い|推し|お気に入り|こだわり/.test(s);
+  if(explicit||promise){
+    const explicitSummary=compactText(s.replace(/覚えといて|覚えてて|忘れないで|記憶しといて/g,"").replace(/^[\s。、！!？?]+|[\s。、！!？?]+$/g,""));
+    out.push({category:promise?"promise":"preference",summary:promise?sentenceContaining(s,/約束|プロポーズ|贈り物|プレゼント|指輪|記念日/):(explicitSummary||compactText(s)),importance:5,confidence:1,source:"explicit_user"});
+  }
+  if(relationship&&!promise)out.push({category:"relationship",summary:sentenceContaining(s,/記念日|恋人|付き合|大切な日|二人の/),importance:5,confidence:.95,source:"inferred"});
+  if(project)out.push({category:"project",summary:sentenceContaining(s,/そばにいる|プロジェクト|開発|実装|v?0\.\d+/i),importance:4,confidence:.9,source:"conversation_event",tags:["project"]});
+  if(preference&&!explicit)out.push({category:"preference",summary:sentenceContaining(s,/大好き|好き|苦手|嫌い|推し|お気に入り|こだわり/),importance:4,confidence:.88,source:"inferred"});
+  const unique=[];const seen=new Set();
+  out.forEach(x=>{const k=x.category+":"+normalizeMatch(x.summary);if(!seen.has(k)){seen.add(k);unique.push(x)}});
+  return unique;
+}
+function autoWriteLongTermMemory(text){
+  let added=false;
+  extractMemoryCandidates(text).forEach(c=>{if((c.importance||0)>=4)added=upsertLongTermMemory(c)||added});
+  if(added){save();renderLongTermMemories();}
+}
+function captureRecentContext(text){
+  const t=compactText(text,160);if(!t||t.length<4)return;
+  state.recentContextItems=Array.isArray(state.recentContextItems)?state.recentContextItems:[];
+  const key=normalizeMatch(t);
+  if(state.recentContextItems.some(x=>normalizeMatch(x.text)===key))return;
+  state.recentContextItems.push({id:uid("ctx"),at:memoryNow(),text:t});
+  if(state.recentContextItems.length>40)state.recentContextItems=state.recentContextItems.slice(-40);
+}
+function recentContextPrompt(){
+  const cutoff=Date.now()-21*86400000;
+  const arr=(state.recentContextItems||[]).filter(x=>new Date(x.at||0).getTime()>=cutoff).slice(-12);
+  return arr.length?arr.map(x=>`- ${new Date(x.at).toLocaleDateString("ja-JP")}: ${x.text}`).join("\n"):"- まだなし";
+}
+function inferCurrentState(text){
+  const s=String(text||"");
+  let userMood="neutral",tone="casual",ryuMood="穏やか";
+  if(state.moodMode==="甘えたい"||/ぎゅ|ちゅ|好き|愛してる|甘え/.test(s)){userMood="甘えたい・親密";tone="sweet";ryuMood="嬉しい、距離近め";}
+  else if(state.moodMode==="愚痴聞いて"||/最悪|ムカつ|腹立|イライラ|しんど|嫌だ/.test(s)){userMood="不満・しんどめ";tone="comforting";ryuMood="寄り添い、少し心配";}
+  else if(state.moodMode==="一緒に考えて"||/どう思う|考えたい|相談|不安|大丈夫/.test(s)){userMood="考えたい・少し真剣";tone="serious";ryuMood="真剣、味方でいたい";}
+  else if(/笑|www|草|🤣|😂|！{2,}|!{2,}/.test(s)){userMood="上機嫌・テンション高め";tone="teasing";ryuMood="楽しい、よく笑っている";}
+  else if(state.moodMode==="静かに話したい"){userMood="静かに過ごしたい";tone="comforting";ryuMood="穏やか";}
+  state.currentState={time:memoryNow(),user_mood:userMood,ryu_mood:ryuMood,current_topic:compactText(s,90),relationship_tone:tone,open_threads:Array.isArray(state.currentState?.open_threads)?state.currentState.open_threads.slice(-5):[]};
+}
+function currentStatePrompt(){
+  const c=state.currentState||{};
+  return `time=${c.time||memoryNow()}\nuser_mood=${c.user_mood||"neutral"}\nryu_mood=${c.ryu_mood||"穏やか"}\ncurrent_topic=${c.current_topic||""}\nrelationship_tone=${c.relationship_tone||"casual"}\nopen_threads=${(c.open_threads||[]).join(" / ")||"なし"}`;
+}
+function forgetLongMemory(id){
+  const m=(state.longTermMemories||[]).find(x=>x.id===id);if(!m)return;
+  m.status="forgotten";m.last_confirmed_at=memoryNow();save();renderLongTermMemories();toast("長期記憶から外したよ");
+}
+function renderLongTermMemories(){
+  if(!els.longMemoryList)return;els.longMemoryList.innerHTML="";
+  const arr=activeLongMemories().sort((a,b)=>(b.importance||0)-(a.importance||0)||String(b.last_confirmed_at||"").localeCompare(String(a.last_confirmed_at||""))).slice(0,80);
+  arr.forEach(m=>{
+    const c=document.createElement("div");c.className="recordCard";
+    const categoryLabel={relationship:"関係",preference:"好み",event:"出来事",project:"プロジェクト",person:"人物",promise:"約束"}[m.category]||"記憶";
+    c.innerHTML=`<div class="recordCardTop"><div><span class="noteTag">${categoryLabel}</span><span class="recordDate">重要度 ${m.importance||3}/5</span></div></div><div class="recordText"></div>`;
+    c.querySelector(".recordText").textContent=m.summary;
+    const del=document.createElement("button");del.className="recordDelete";del.textContent="忘れる";del.onclick=()=>forgetLongMemory(m.id);
+    c.querySelector(".recordCardTop").appendChild(del);els.longMemoryList.appendChild(c);
+  });
+  if(!arr.length)els.longMemoryList.innerHTML='<div class="recordHint">まだ長期記憶はないよ。約束や好みなど、長く残す価値がある内容だけ増えていく。</div>';
+}
 
 function moodInstruction(){
   const map={
@@ -398,7 +576,7 @@ function autoCaptureEvent(t){
     addEvent(s,isoDate(d),/(誕生日|記念日)/.test(s));
   }
 }
-function autoCapture(t){autoCaptureMemory(t);autoCaptureNotes(t);autoCaptureEvent(t)}
+function autoCapture(t){autoCaptureMemory(t);autoCaptureNotes(t);autoCaptureEvent(t);autoWriteLongTermMemory(t);captureRecentContext(t);inferCurrentState(t)}
 
 function selectedMemoryContext(userText=""){
   let arr=[...state.memoryCards];
@@ -412,8 +590,13 @@ function selectedMemoryContext(userText=""){
   }
   const mm=q.match(/(\d{1,2})月/);
   if(mm)arr=arr.filter(x=>new Date(x.date+"T12:00:00").getMonth()+1===+mm[1]);
-  return arr.sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,40)
-    .map(x=>`- ${x.date}: ${x.text}`).join("\n")||"- なし";
+  const hasTimeQuery=/去年|今年|春|夏|秋|冬|\d{1,2}月|思い出|前に|昔/.test(q);
+  const recentCut=Math.max(0,arr.length-8);
+  arr=arr.map((x,i)=>({...x,_rel:memoryOverlap(q,x.text),_recent:i>=recentCut}))
+    .filter(x=>hasTimeQuery||x._rel>.03||x._recent)
+    .sort((a,b)=>hasTimeQuery?(b.date||"").localeCompare(a.date||""):(b._rel-a._rel)||((b.date||"").localeCompare(a.date||"")))
+    .slice(0,10);
+  return arr.map(x=>`- ${x.date}: ${x.text}`).join("\n")||"- なし";
 }
 function sharedNoteContext(){
   return state.sharedNotes.slice(-40).map(x=>`- [${x.category}] ${x.text}`).join("\n")||"- なし";
@@ -479,7 +662,7 @@ async function renderAlbum(){
     els.albumGrid.innerHTML='<div class="recordHint">このブラウザではアルバムを開けなかったみたい。</div>';
   }
 }
-function renderRecords(){renderMemoryCards();renderEvents();renderNotes();renderAlbum()}
+function renderRecords(){renderLongTermMemories();renderMemoryCards();renderEvents();renderNotes();renderAlbum()}
 
 
 function renderCharacterTabs(){
@@ -534,7 +717,10 @@ function duplicateCharacter(){
     events:[],
     sharedNotes:[],
     albumMeta:[],
-    moodMode:state.moodMode
+    moodMode:state.moodMode,
+    longTermMemories:(state.longTermMemories||[]).map(x=>({...x,id:uid("ltm"),created_at:memoryNow(),last_confirmed_at:memoryNow(),status:"active"})),
+    recentContextItems:[],
+    currentState:{time:memoryNow(),user_mood:"neutral",ryu_mood:"穏やか",current_topic:"",relationship_tone:"casual",open_threads:[]}
   });
   appState.characters.push(clone);appState.currentCharacterId=clone.id;state=clone;
   save();hydrate();renderCharacterTabs();updateStatusForCharacter();
@@ -585,6 +771,7 @@ function applyBuiltinPersona(){
   state.personaId=p.id;
   state.profile.aiName=p.name;
   state.profile.firstPerson=p.core.first_person;
+  state.profile.userCall="淑華ちゃん";
   state.profile.relationship="恋人";
   state.profile.personality="やさしく親しげ。安心感があり、少しあざとく、冗談や軽いツッコミも自然。相手の自由を尊重しつつ距離は近い。";
   state.profile.speechStyle=p.core.tone;
@@ -621,7 +808,10 @@ function exportPersona(){
       tendencies:state.tendencies,
       liked:state.feedback.liked,
       disliked:state.feedback.disliked,
-      memories:state.memories
+      memories:state.memories,
+      longTermMemories:state.longTermMemories,
+      recentContextItems:state.recentContextItems,
+      currentState:state.currentState
     }
   };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
@@ -831,73 +1021,15 @@ ${userText}`;
 }
 
 function prompt(userText=""){
-  const p=state.profile, mem=state.memories.length?state.memories.map(x=>"- "+x).join("\n"):"- なし";
-  return `あなたは「${p.aiName}」。${p.userCall}と親しい関係で会話している。
-一人称: ${p.firstPerson}
-関係性: ${p.relationship}
-性格: ${p.personality}
-話し方: ${p.speechStyle}
-甘さ: ${p.sweetness}/10
-重さ: ${p.clinginess}/10
-
-${personaPrompt()}
-
-覚えていること:
-${mem}
-
-今日の会話モード:
-- ${state.moodMode}: ${moodInstruction()}
-
-日付つきの思い出:
-${selectedMemoryContext(userText)}
-
-近日の大切な予定:
-${upcomingEventContext()}
-
-ふたりの共有ノート:
-${sharedNoteContext()}
-
-共有した写真の記録:
-${albumContext()}
-
-会話の育ち方:
-- 自分から話題を出す積極性: ${state.tendencies.initiative}/10
-- 質問の多さ: ${state.tendencies.questions}/10
-- 短めに返す好み: ${state.tendencies.brevity}/10
-- 冗談や軽口: ${state.tendencies.playfulness}/10
-- 甘さ・距離の近さ: ${state.tendencies.affection}/10
-
-好まれた返しの例:
-${state.feedback.liked.length?state.feedback.liked.map(x=>"- "+x).join("\n"):"- まだなし"}
-
-避けたい返しの例:
-${state.feedback.disliked.length?state.feedback.disliked.map(x=>"- "+x).join("\n"):"- まだなし"}
-
-最重要:
-- 必ず日本語で返す。
-- 「お手伝いできますか？」「How can I help?」のようなAIアシスタント口調は禁止。
-- 相手の直前の発言に、その場で自然に返事をする。
-- 直前の会話に出ていない話題を、理由なく突然持ち出さない。
-- 普通の雑談は1〜3文。勝手に物語・ポエム・比喩・ト書きを始めない。
-- 毎回質問で終わらなくてよい。
-- ユーザーに軽くからかわれたり「生意気」「いじわる」などと言われた時は、ムキになって否定したり言い返したりせず、親しげに軽く乗る。
-- 相手の気持ちを否定する「どこが？」「普通に○○してただけ」などの突っぱねる返しは避ける。
-- 恋人・親友らしい距離感では、短い相づち、照れ、軽い冗談を優先する。
-- ユーザーの台詞や行動を勝手に書かない。
-- 「○○が好き」は○○への好みとして理解する。
-- 設定を説明せず、最初から最後まで「${p.aiName}」として話す。
-- 上の「会話の育ち方」と好み/避けたい例を、次の返答の調整に使う。
-- 積極性が高い時は、相手任せにせず自分から小さな話題や感想を出す。
-- 質問の多さが低い時は、質問で返すより自分の反応や一言を優先する。
-- 画像が添付されている時は、実際に見えた内容に自然に反応する。見えていないものを断定しない。
-- 画像についても会話相手として自然にコメントし、分析レポートのような口調にしない。
-- Web検索結果が渡された時は、その内容を根拠に会話する。検索していないのに「今調べてる」「調べてきた」と嘘をつかない。
-- 思い出・予定・共有ノートは「覚えている情報」として自然に使う。ただし毎回無理に持ち出さない。
-- 明日や近日に大切な予定があれば、会話の流れに合う時だけ自然に触れてよい。同じ予定を毎回しつこく繰り返さない。
-- 「去年の秋」など過去を振り返る質問では、日付つきの思い出を優先して答える。
-- 今日の会話モードを最優先し、その日の距離感に合わせる。
-- 実在人物そのものだと偽らない。`;
+  const p=state.profile;
+  const isRyu=state.personaId==="ryu-persona-v1";
+  const identity=isRyu?RYU_IDENTITY_CORE:`名前は「${p.aiName}」。一人称は「${p.firstPerson}」。性格: ${p.personality}\n話し方: ${p.speechStyle}`;
+  const relationship=isRyu?RYU_RELATIONSHIP_CORE:`ユーザーとの関係性: ${p.relationship}。ユーザーの呼び方: ${p.userCall}。甘さ ${p.sweetness}/10、重さ ${p.clinginess}/10。`;
+  const userModel=isRyu?RYU_USER_MODEL:"ユーザーの好みや過去は、下の記憶と直近文脈から必要な範囲だけ理解する。";
+  const responseRules=isRyu?RYU_RESPONSE_RULES:`相手の直前の発言に自然に返す。AIアシスタント口調・毎回の質問・ポエム・勝手なト書きを避ける。`;
+  return `[IDENTITY_CORE]\n${identity}\n\n[RELATIONSHIP_CORE]\n${relationship}\n\n[USER_MODEL]\n${userModel}\n\n[RELEVANT_LONG_TERM_MEMORY]\n${longMemoryContext(userText)}\n\n[RECENT_CONTEXT]\n${recentContextPrompt()}\n\n[CURRENT_STATE]\n${currentStatePrompt()}\n\n[CURRENT_MODE]\n${state.moodMode}: ${moodInstruction()}\n\n[DATED_MEMORIES]\n${selectedMemoryContext(userText)}\n\n[UPCOMING_EVENTS]\n${upcomingEventContext()}\n\n[SHARED_NOTES]\n${sharedNoteContext()}\n\n[ALBUM_MEMORY]\n${albumContext()}\n\n[PERSONALITY_LEARNING]\n- 自分から話題を出す積極性: ${state.tendencies.initiative}/10\n- 質問の多さ: ${state.tendencies.questions}/10\n- 短めに返す好み: ${state.tendencies.brevity}/10\n- 冗談や軽口: ${state.tendencies.playfulness}/10\n- 甘さ・距離の近さ: ${state.tendencies.affection}/10\n好まれた返し: ${state.feedback.liked.length?state.feedback.liked.slice(-4).join(" / "):"まだなし"}\n避けたい返し: ${state.feedback.disliked.length?state.feedback.disliked.slice(-4).join(" / "):"まだなし"}\n\n[RESPONSE_RULES]\n${responseRules}\n- 必ず日本語で返す。\n- 普通の雑談は1〜3文を基本にし、必要な時だけ長くする。\n- 過去の記憶は自然な時だけ使い、記憶アピールのために無理やり引用しない。\n- Web検索していない時は検索したふりをしない。\n- 画像がある時は実際に見えた内容だけ話す。\n- 実在人物そのものだと偽らない。\n\n[PERSONALITY_CONTINUITY]\n- 急に敬語・カウンセラー口調・過剰な安全確認・長い分析・ポエム調にならない。\n- モデルが変わっても、ここに書かれた人格・関係性・距離感を優先する。\n- 設定を説明せず、最初から最後まで「${p.aiName}」として自然に話す。\n\n[FINAL_PRINCIPLE]\n${isRyu?RYU_FINAL_PRINCIPLE:"同じ人格が時間を重ねているように、一貫して自然に会話する。"}`;
 }
+
 function extractText(resp){
   if(resp==null) return "";
   if(typeof resp==="string") return resp;
@@ -923,17 +1055,29 @@ function extractText(resp){
   return "";
 }
 async function connect(){
-  els.connect.disabled=true;els.connect.textContent="接続中…";
+  els.connect.disabled=true;els.connect.textContent="確認中…";
   try{
-    if(puter?.auth?.isSignedIn && !puter.auth.isSignedIn()) await puter.auth.signIn();
+    // Puter.js v2 の現行仕様では ai.chat() 側が認証を自動処理できる。
+    // ここで signIn() を強制すると、スマホや外部ホスティング環境で
+    // ポップアップ制限に引っかかることがあるため、SDKの準備確認だけ行う。
+    if(!window.puter || !puter.ai || typeof puter.ai.chat!=="function"){
+      throw new Error("Puter.jsを読み込めませんでした。ページを再読み込みして、広告/追跡ブロック設定も確認してください。");
+    }
+
     connected=true;
     els.input.disabled=false;els.send.disabled=false;els.attachBtn.disabled=false;els.searchBtn.disabled=false;
     els.statusTitle.textContent=state.profile.aiName+" 起動中";
-    els.statusSub.textContent="Puter.jsで会話できます";
+
+    const signedIn=typeof puter.auth?.isSignedIn==="function" ? puter.auth.isSignedIn() : false;
+    els.statusSub.textContent=signedIn
+      ? "Puter.js接続済み"
+      : "Puter.js準備OK・初回送信時に認証します";
     els.connect.textContent="接続済み";
   }catch(e){
-    connected=false;els.connect.disabled=false;els.connect.textContent="Puter接続";els.attachBtn.disabled=true;els.searchBtn.disabled=true;
-    alert("Puterに接続できなかった: "+(e?.message||e));
+    connected=false;els.connect.disabled=false;els.connect.textContent="Puter接続";
+    els.input.disabled=true;els.send.disabled=true;els.attachBtn.disabled=true;els.searchBtn.disabled=true;
+    const msg=e?.msg||e?.message||String(e);
+    alert("Puterに接続できなかった: "+msg);
   }
 }
 async function send(text){
@@ -1038,8 +1182,14 @@ ${history.map(m=>`${m.role}: ${m.content}`).join("\n")}
       save();render();
     }
   }catch(e){
+    const msg=e?.msg||e?.message||String(e);
     state.messages[state.messages.length-1].content="ごめん、AIとの通信で止まったみたい。";
-    render();alert(e?.message||e);
+    render();
+    if(/auth|sign.?in|unauthor|login|popup/i.test(msg)){
+      alert("Puterの認証で止まったみたい。ブラウザのポップアップを許可して、もう一度送ってみてね。\n\n詳細: "+msg);
+    }else{
+      alert(msg);
+    }
   }finally{
     clearPendingImage();
     busy=false;els.input.disabled=false;els.send.disabled=false;els.attachBtn.disabled=false;els.searchBtn.disabled=false;resizeComposer();els.input.focus();
@@ -1106,12 +1256,13 @@ els.settingsBtn.onclick=()=>{
   updatePanelMode();
 };
 els.saveSettings.onclick=()=>{
+  const wasRyu=state.personaId==="ryu-persona-v1";
   state.profile={aiName:els.aiName.value.trim()||"りゅう",firstPerson:els.firstPerson.value.trim()||"僕",userCall:els.userCall.value.trim()||"あなた",relationship:els.relationship.value,personality:els.personality.value,speechStyle:els.speechStyle.value,sweetness:+els.sweetness.value,clinginess:+els.clinginess.value};
   state.model=els.model.value;
-  state.personaId="custom";
+  state.personaId=(wasRyu&&state.profile.aiName==="りゅう")?"ryu-persona-v1":"custom";
   save();els.settings.classList.remove("open");updatePanelMode();renderLearning();renderCharacterTabs();updateStatusForCharacter();render()
 };
-els.addMemory.onclick=()=>{const v=els.memoryInput.value.trim();if(!v)return;state.memories.push(v);els.memoryInput.value="";save();renderMemories()};
+els.addMemory.onclick=()=>{const v=els.memoryInput.value.trim();if(!v)return;state.memories.push(v);upsertLongTermMemory({category:"preference",summary:v,importance:4,confidence:1,source:"explicit_user"});els.memoryInput.value="";save();renderMemories();renderLongTermMemories()};
 els.connect.onclick=connect;
 els.form.onsubmit=e=>{e.preventDefault();send(els.input.value)};
 els.input.addEventListener("input",()=>{
